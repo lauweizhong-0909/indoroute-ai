@@ -2,7 +2,7 @@
 
 ## Team of 5 · 8 Days · 30 Tasks · Demo MVP
 
-> **Architecture:** No Docker. FastAPI backend (Railway), Next.js frontend (Vercel), SQLite for local dev / Neon Postgres for prod. Z.AI GLM is the intelligence core — all 4 AI modules route through it. Run locally with `uvicorn` and `pnpm dev`.
+> **Architecture:** No Docker. FastAPI backend (Render), Next.js frontend (Vercel), SQLite for local dev / Neon Postgres for prod. Z.AI GLM is the intelligence core — all 4 AI modules route through it. Run locally with `uvicorn` and `pnpm dev`.
 
 > **Hackathon:** UMHackathon 2026 · Domain 2: AI for Economic Empowerment & Decision Intelligence
 > **Submission Deadline:** 26 April 2026, 07:59 AM
@@ -15,7 +15,7 @@ Each person owns **exclusive directories**. No two people edit the same files.
 
 | Role | Code | Owns These Directories | Does NOT Touch |
 |---|---|---|---|
-| **P1 — Infra Lead** | `P1-INFRA` | `/apps/api/core/`, `/apps/api/db/`, root configs, `docker-compose.yml`, seed scripts, Railway + Vercel deploy | GLM modules, scraper, frontend, docs |
+| **P1 — Infra Lead** | `P1-INFRA` | `/apps/api/core/`, `/apps/api/db/`, root configs, `render.yaml`, seed scripts, Render + Vercel deploy | GLM modules, scraper, frontend, docs |
 | **P2 — Data Engineer** | `P2-DATA` | `/apps/api/scraper/`, `/apps/api/ingestion/`, `/data/` (all JSON & mock files) | GLM modules, frontend, docs |
 | **P3 — GLM/AI Engineer** | `P3-GLM` | `/apps/api/intelligence/` (all 4 AI modules: sentinel, scanner, shield, router) | Scraper, infra, frontend, docs |
 | **P4 — Frontend Engineer** | `P4-FRONTEND` | `/apps/web/` (entire frontend) | Any Python backend code |
@@ -40,7 +40,7 @@ Each person owns **exclusive directories**. No two people edit the same files.
 | Block | P1-INFRA | P2-DATA | P3-GLM | P4-FRONTEND | P5-DOCS |
 |---|---|---|---|---|---|
 | **Day 4** | Demo seed script: 10 SKUs including 2 "villain" SKUs (BPOM-uncertified, negative-margin) | Beacukai news scraper (Python `httpx` + `beautifulsoup4`) | Compliance Scanner: GLM cross-references SKU descriptions vs `lartas_rules.json` | Compliance Radar screen + SKU input form | QATD: risk matrix (5×5), test cases for all 4 GLM modules |
-| **Day 5** | Deploy to Railway (backend) + Vercel (frontend), set prod env vars | Shopee logistics rates parser: PDF → `logistics_rates.json` | Profit Shield: dynamic formula `(price × rate) − (cost + tariff + shipping)` + GLM explains | Profit Shield screen: per-SKU margin table with red/green indicators | Pitch deck draft: problem slides, demo flow, value proposition |
+| **Day 5** | Deploy to Render (backend) + Vercel (frontend), set prod env vars | Shopee logistics rates parser: PDF → `logistics_rates.json` | Profit Shield: dynamic formula `(price × rate) − (cost + tariff + shipping)` + GLM explains | Profit Shield screen: per-SKU margin table with red/green indicators | Pitch deck draft: problem slides, demo flow, value proposition |
 | **Day 6** | Integration checkpoint: seed prod DB, verify all 4 modules end-to-end | Data validation fixes, edge-case data (conflicting HS codes, zero-margin SKU) | Smart Router: GLM trade-off reasoning — outputs ranked action commands | Smart Router decision screen: "Switch to warehouse" recommendation card | Integration test pass 1: log all bugs in shared sheet |
 
 ### Phase 3 (Days 7–8 · Apr 24–25): Polish, Docs & Submit
@@ -48,7 +48,7 @@ Each person owns **exclusive directories**. No two people edit the same files.
 |---|---|---|---|---|---|
 | **Day 7** | Demo walkthrough prep, final prod seed | Refresh prod data, verify villain SKU triggers correctly | GLM fallback handling, response time tuning (<8s per call) | Risk Center screen, UI polish, responsive layout | QATD finalised, SAD architecture section complete |
 | **Day 8** | Final deploy check, backup demo video co-record | Stand by for data hotfixes | Final GLM integration test | Screenshot all screens for pitch deck | Record pitch video, assemble submission package |
-| **Submit by Apr 26, 07:59 AM** | ✅ Push final code to GitHub | ✅ Confirm all JSON data files committed | ✅ Confirm GLM API key is in Railway env | ✅ Confirm Vercel deployment live | ✅ Upload PRD + SAD + QATD + pitch deck + video |
+| **Submit by Apr 26, 07:59 AM** | ✅ Push final code to GitHub | ✅ Confirm all JSON data files committed | ✅ Confirm GLM API key is in Render env | ✅ Confirm Vercel deployment live | ✅ Upload PRD + SAD + QATD + pitch deck + video |
 
 ---
 
@@ -518,7 +518,7 @@ Each person owns **exclusive directories**. No two people edit the same files.
 - [ ] GLM Dependency Diagram: shows prompt construction → GLM API call → JSON parsing → API response for each of the 4 modules
 - [ ] Sequence Diagram: one complete user flow — "Seller uploads inventory → triggers Compliance Scanner → sees violation alert"
 - [ ] Data Flow section: how `inventory.json` → FastAPI → GLM → frontend
-- [ ] Technology Stack table: Frontend (Next.js + Tailwind), Backend (FastAPI + SQLAlchemy), DB (Neon Postgres), AI (Z.AI GLM), Deployment (Vercel + Railway)
+- [ ] Technology Stack table: Frontend (Next.js + Tailwind), Backend (FastAPI + SQLAlchemy), DB (Neon Postgres), AI (Z.AI GLM), Deployment (Vercel + Render)
 
 **Subtasks:**
 1. Architecture overview paragraph + stack table
