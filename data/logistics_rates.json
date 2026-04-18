@@ -1,0 +1,68 @@
+{
+  "routes": {
+    "SLS_Direct": {
+      "name": "Shopee Logistics Service (Cross-Border)",
+      "currency": "MYR",
+      "description": "Direct ship from Malaysia to Indonesia. High risk of Red Light customs delays.",
+      "risk_level": "High",
+      "eta_days": "7-12",
+      "tiers": [
+        {
+          "max_weight_g": 10,
+          "fee": 4.5
+        },
+        {
+          "max_weight_g": 50,
+          "fee": 5.2
+        },
+        {
+          "max_weight_g": 100,
+          "fee": 6.8
+        },
+        {
+          "max_weight_g": 200,
+          "fee": 8.5
+        },
+        {
+          "max_weight_g": 500,
+          "fee": 14.0
+        },
+        {
+          "max_weight_g": 1000,
+          "fee": 24.5
+        },
+        {
+          "max_weight_g": 2000,
+          "fee": 42.0
+        }
+      ],
+      "extra_weight_per_500g": 9.0
+    },
+    "Jakarta_WH": {
+      "name": "Jakarta Local Warehouse (In-Country)",
+      "currency": "MYR",
+      "description": "Stock pre-cleared and stored in Jakarta. Fast delivery, low tax risk.",
+      "risk_level": "Low",
+      "eta_days": "2-4",
+      "tiers": [
+        {
+          "max_weight_g": 500,
+          "fee": 3.5
+        },
+        {
+          "max_weight_g": 1000,
+          "fee": 5.0
+        },
+        {
+          "max_weight_g": 2000,
+          "fee": 8.5
+        },
+        {
+          "max_weight_g": 5000,
+          "fee": 15.0
+        }
+      ],
+      "extra_weight_per_1000g": 3.0
+    }
+  }
+}
