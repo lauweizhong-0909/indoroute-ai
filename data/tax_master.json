@@ -1,0 +1,58 @@
+[
+  {
+    "hs_code": 33041000,
+    "bm_rate": 0.15,
+    "ppn_rate": 0.12,
+    "pph_rate": 0.1,
+    "mandatory_docs": "Surat Keterangan Impor / Special Access Scheme (SAS), LS Impor Kosmetik dan Perbekalan Kesehatan Rumah Tangga/ Surat Keterangan",
+    "restricted_keywords": "permanent, lip tattoo, filler-effect, medicament, heal, vitamin lips, lip repair"
+  },
+  {
+    "hs_code": 33042000,
+    "bm_rate": 0.1,
+    "ppn_rate": 0.12,
+    "pph_rate": 0.075,
+    "mandatory_docs": "Surat Keterangan Impor / Special Access Scheme (SAS), LS Impor Kosmetik dan Perbekalan Kesehatan Rumah Tangga/ Surat Keterangan",
+    "restricted_keywords": "eyelash growth, stimulator, vision improvement, eye-strain, steroid, antibiotic"
+  },
+  {
+    "hs_code": 33043000,
+    "bm_rate": 0.15,
+    "ppn_rate": 0.12,
+    "pph_rate": 0.1,
+    "mandatory_docs": "Surat Keterangan Impor / Special Access Scheme (SAS), LS Impor Kosmetik dan Perbekalan Kesehatan Rumah Tangga/ Surat Keterangan",
+    "restricted_keywords": "fungus, nail fungus, nail repair, ingrown, medical grade, infection cure"
+  },
+  {
+    "hs_code": 33049100,
+    "bm_rate": 0.15,
+    "ppn_rate": 0.12,
+    "pph_rate": 0.1,
+    "mandatory_docs": "Surat Keterangan Impor / Special Access Scheme (SAS), LS Impor Kosmetik dan Perbekalan Kesehatan Rumah Tangga/ Surat Keterangan",
+    "restricted_keywords": "talc-free, asbestos, anti-septic, wound, baby rash, instant fair, healing powder"
+  },
+  {
+    "hs_code": 33049920,
+    "bm_rate": 0.15,
+    "ppn_rate": 0.12,
+    "pph_rate": 0.1,
+    "mandatory_docs": "Surat Keterangan Impor / Special Access Scheme (SAS), LS Impor Kosmetik dan Perbekalan Kesehatan Rumah Tangga/ Surat Keterangan",
+    "restricted_keywords": "acne cure, remove acne, hormonal treatment, scar removal, isotretinoin, breakout cure"
+  },
+  {
+    "hs_code": 33049930,
+    "bm_rate": 0.15,
+    "ppn_rate": 0.12,
+    "pph_rate": 0.1,
+    "mandatory_docs": "Surat Keterangan Impor / Special Access Scheme (SAS), LS Impor Kosmetik dan Perbekalan Kesehatan Rumah Tangga/ Surat Keterangan",
+    "restricted_keywords": "botox-like, collagen injection, whitening injection, melasma cure, mercury, skin bleaching"
+  },
+  {
+    "hs_code": 33049990,
+    "bm_rate": 0.15,
+    "ppn_rate": 0.12,
+    "pph_rate": 0.1,
+    "mandatory_docs": "Surat Keterangan Impor / Special Access Scheme (SAS), LS Impor Kosmetik dan Perbekalan Kesehatan Rumah Tangga/ Surat Keterangan",
+    "restricted_keywords": "detox, slimming, fat burning, cellulite cure, skin disease, eczema, psoriasis"
+  }
+]

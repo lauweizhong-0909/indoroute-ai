@@ -1,0 +1,28 @@
+[
+  {
+    "sku_id": "VIL-001",
+    "product_name": "Medical Grade Whitening Serum",
+    "category": "Other face or skin creams and lotions",
+    "hs_code": 33049930,
+    "cost_myr": 29.0,
+    "selling_price_idr": 210000,
+    "weight_g": 45,
+    "bpom_certified": "No",
+    "description": "Medical grade formula for instant skin bleaching and scar cure",
+    "balanced_qty": 18,
+    "qty_sold": 2
+  },
+  {
+    "sku_id": "VIL-002",
+    "product_name": "Premium Collagen Booster Ampoule",
+    "category": "Other",
+    "hs_code": 33049990,
+    "cost_myr": 55.0,
+    "selling_price_idr": 165000,
+    "weight_g": 120,
+    "bpom_certified": "Yes",
+    "description": "Anti-aging concentrate for intensive overnight care",
+    "balanced_qty": 22,
+    "qty_sold": 11
+  }
+]

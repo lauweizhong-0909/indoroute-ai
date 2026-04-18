@@ -171,7 +171,7 @@ Each person owns **exclusive directories**. No two people edit the same files.
 **Priority:** HIGH · **Dependencies:** Task 2 schema · **Phase 1 · Days 1–2**
 
 **Measurable deliverables:**
-- [ ] `inventory.json`: 10 SKUs with fields `sku_id`, `product_name`, `category`, `hs_code`, `cost_myr`, `selling_price_idr`, `weight_g`, `bpom_certified`, `description`
+- [ ] `inventory.json`: 50 SKUs with fields `sku_id`, `product_name`, `category`, `hs_code`, `cost_myr`, `selling_price_idr`, `weight_g`, `bpom_certified`, `description`
 - [ ] `tax_master.json`: HS code → `bm_rate` (import duty), `ppn_rate` (VAT), `pph_rate` (income tax), `mandatory_docs`, `restricted_keywords`
 - [ ] `logistics_config.json`: 2 routes (`SLS_Direct` and `Jakarta_WH`) with `base_weight_g`, `base_fee_myr`, `extra_weight_g`, `extra_fee_myr`, `normal_days`, `risk_level`
 - [ ] All percentages stored as decimals (e.g., 15% → `0.15`)
@@ -179,7 +179,7 @@ Each person owns **exclusive directories**. No two people edit the same files.
 - [ ] Files committed to `/data/` directory and shared with P1 and P3
 
 **Subtasks:**
-1. Design `inventory.json` schema and populate 10 SKUs (cosmetics + apparel mix)
+1. Design `inventory.json` schema and populate 50 SKUs (cosmetics-focused mix)
 2. Design `tax_master.json` from INSW reference data
 3. Design `logistics_config.json` from Shopee SLS fee table
 4. Validate JSON files with Python `json.loads()` — zero parse errors
@@ -211,7 +211,7 @@ Each person owns **exclusive directories**. No two people edit the same files.
 
 **Measurable deliverables:**
 - [ ] Python script in `/apps/api/scraper/beacukai_scraper.py` fetches latest news from `https://www.beacukai.go.id/berita.html`
-- [ ] Scraper extracts: article title, date, body text (first 500 chars)
+- [ ] Scraper extracts: article title, date, body text (first 1500 chars)
 - [ ] Output saved as structured dict and can be passed directly to `POST /api/alerts/ingest`
 - [ ] Graceful failure: if site unreachable, falls back to `customs_news_mock.txt` automatically
 - [ ] Scraper invocable from CLI: `python scraper/beacukai_scraper.py --limit 3`
