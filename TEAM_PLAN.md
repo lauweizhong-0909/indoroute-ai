@@ -1,6 +1,6 @@
 # IndoRoute AI — UMHackathon 2026 Team Plan
 
-## Team of 5 · 8 Days · 30 Tasks
+## Team of 5 · 8 Days · 30 Tasks · Demo MVP
 
 > **Architecture:** No Docker. FastAPI backend (Railway), Next.js frontend (Vercel), SQLite for local dev / Neon Postgres for prod. Z.AI GLM is the intelligence core — all 4 AI modules route through it. Run locally with `uvicorn` and `pnpm dev`.
 
@@ -137,18 +137,20 @@ Each person owns **exclusive directories**. No two people edit the same files.
 **Priority:** HIGH · **Dependencies:** Tasks 1–4 · **Phase 2 · Day 5**
 
 **Measurable deliverables:**
-- [ ] FastAPI backend deployed to Railway — `GET https://<project>.railway.app/health` returns `200 OK`
+- [ ] FastAPI backend deployed to Render — `GET https://<project>.onrender.com/health` returns `200 OK`
 - [ ] Next.js frontend deployed to Vercel — live URL accessible
-- [ ] All env vars (`DATABASE_URL`, `ZAI_GLM_API_KEY`) set in Railway dashboard
+- [ ] All env vars (`DATABASE_URL`, `ZAI_GLM_API_KEY`) set in Render dashboard
 - [ ] GitHub Actions workflow runs on push to `main`: lints Python code, runs `pytest` for P3's tests
 - [ ] Deployment takes <10 minutes from push to live
+- [ ] **Before demo:** manually ping the Render URL once to wake the free-tier instance
 
 **Subtasks:**
-1. Create `railway.toml` for backend deployment config
-2. Connect GitHub repo to Vercel for frontend auto-deploy
-3. Set all production environment variables in Railway + Vercel dashboards
-4. Write GitHub Actions workflow (`.github/workflows/ci.yml`)
-5. Perform first end-to-end smoke test on live URLs
+1. Create `render.yaml` for backend deployment config
+2. Connect GitHub repo to Render (Web Service → Python → `uvicorn apps.api.main:app --host 0.0.0.0 --port $PORT`)
+3. Connect GitHub repo to Vercel for frontend auto-deploy
+4. Set all production environment variables in Render + Vercel dashboards
+5. Write GitHub Actions workflow (`.github/workflows/ci.yml`)
+6. Perform first end-to-end smoke test on live URLs
 
 ---
 
@@ -613,7 +615,7 @@ Each person owns **exclusive directories**. No two people edit the same files.
 | Day 3, End of Day | P3 confirms GLM client works; P5 shares PRD draft for team review | P3 + P5 → All |
 | Day 4, Midday | P3 deploys Policy Sentinel + Compliance Scanner endpoints — P4 can wire up screens | P3 → P4 |
 | Day 5, Midday | P3 deploys Profit Shield + Smart Router — P4 completes all 4 screens | P3 → P4 |
-| Day 5, End of Day | P1 confirms Railway + Vercel deployment live; all team smoke-tests the live URL | P1 → All |
+| Day 5, End of Day | P1 confirms Render + Vercel deployment live; all team smoke-tests the live URL | P1 → All |
 | Day 6, End of Day | **Feature Freeze** — P5 begins integration testing; only bug fixes allowed after this point | All |
 | Day 7, Midday | P5 reports all bugs; P1/P2/P3/P4 fix all HIGH severity issues | P5 → Respective owners |
 | Day 7, End of Day | P4 sends screenshots of all screens to P5 for pitch deck | P4 → P5 |
@@ -627,12 +629,13 @@ Each person owns **exclusive directories**. No two people edit the same files.
 | Service | Platform | Free Tier | Notes |
 |---|---|---|---|
 | **PostgreSQL** | Neon | 0.5 GB storage | Branching for dev vs prod |
-| **Backend API** | Railway | $5 credit/month | FastAPI + `uvicorn` |
+| **Backend API** | Render | 750 hrs/month free | FastAPI + `uvicorn`, auto-deploys from GitHub |
 | **Frontend** | Vercel | Unlimited deploys | Auto-deploys on push to `main` |
-| **GLM API** | Z.AI | Hackathon credits | Store key in Railway env vars |
+| **GLM API** | Z.AI | Hackathon credits | Store key in Render environment variables |
 | **File storage** | `/data/` in repo | — | JSON files committed to Git |
 
 > No Docker required. Local dev: `uvicorn apps.api.main:app --reload` (backend) + `pnpm dev` (frontend).
+> ⚠️ Render free tier **spins down after 15 min of inactivity** — first request takes ~30 seconds to wake up. Before your demo, open the backend URL once to wake it up.
 
 ---
 
