@@ -1,0 +1,17 @@
+[
+  {
+    "sku_id": "BOR-001",
+    "product_name": "Ceramide Daily Repair Lotion",
+    "category": "Other face or skin creams and lotions",
+    "hs_code": 33049930,
+    "cost_myr": 22.5,
+    "selling_price_idr": 106500,
+    "weight_g": 95,
+    "bpom_certified": "Yes",
+    "description": "Barrier-support lotion for sensitive skin",
+    "balanced_qty": 75,
+    "qty_sold": 64,
+    "target_margin_pct": 0.05,
+    "note": "Borderline SKU for Profit Shield threshold checks"
+  }
+]

@@ -1,0 +1,54 @@
+export interface SKU {
+  sku_id: string;
+  name: string;
+  category: string;
+  bpom_certified: boolean;
+  cost_myr: number;
+  price_idr: number;
+  weight_g: number;
+  description: string;
+}
+
+export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+
+export interface ComplianceReport {
+  sku_id: string;
+  compliant: boolean;
+  violations: string[];  
+  recommendation: string;
+  why_flagged?: string;
+  fix_steps?: string[];
+  shipment_status?: string;
+}
+
+export interface ProfitResult {
+  sku_id: string;
+  net_profit_myr: number;
+  margin_pct: number;
+  alert: boolean;
+  explanation: string;
+}
+
+export interface RouterDecision {
+  id: string;
+  action: string;
+  rationale: string;
+  priority: RiskLevel;
+  trade_offs: string;
+  trigger_summary: string;
+  affected_skus: string[];
+  expected_outcome: string;
+  created_at: string;
+}
+
+export interface CustomsAlert {
+  id: string;
+  title: string;
+  body: string;
+  date: string;
+  is_active: boolean;
+  impact_summary?: string;
+  affected_targets?: string[];
+  next_action?: string;
+  triggered_modules?: string[];
+}

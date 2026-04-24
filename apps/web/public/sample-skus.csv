@@ -1,0 +1,4 @@
+sku_id,product_name,category,hs_code,cost_myr,selling_price_idr,weight_g,bpom_certified,description,balanced_qty,qty_sold
+TEST-001,Brightening Serum,Other face or skin creams and lotions,33049930,18,145000,60,Yes,Daily brightening serum,40,12
+TEST-002,Medical Grade Peel,Other face or skin creams and lotions,33049930,26,190000,80,No,Medical grade peel for scar cure,12,2
+TEST-003,Heavy Blender,Other,85094000,95,260000,2400,Yes,High power kitchen blender,8,1

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: indoroute-api
+    env: python
+    buildCommand: pip install -r apps/api/requirements.txt
+    startCommand: cd apps/api && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHONPATH
+        value: .
+      - key: DATABASE_URL
+        sync: false
+      - key: ZAI_GLM_API_KEY
+        sync: false
