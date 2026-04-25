@@ -47,10 +47,15 @@ export interface CustomsAlert {
   body: string;
   date: string;
   is_active: boolean;
+  severity?: RiskLevel | string;
+  risk_type?: string;
   impact_summary?: string;
   affected_targets?: string[];
+  affected_skus?: string[];
   next_action?: string;
   triggered_modules?: string[];
+  source?: string;
+  source_url?: string;
 }
 
 export interface ProfitAdviceOption {

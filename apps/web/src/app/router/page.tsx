@@ -3,160 +3,187 @@
 import { useState, useEffect } from "react";
 import { getRouterDecisions } from "@/lib/api";
 import { RouterDecision } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Anchor, ArrowRight, CheckCircle2, Clock, MapPin, Truck, AlertTriangle, Link2, PackageSearch } from 'lucide-react';
+import { Anchor, ArrowRight, AlertTriangle, ShieldCheck, Route, Zap, RefreshCw } from 'lucide-react';
 
 export default function RouterPage() {
   const [decisions, setDecisions] = useState<RouterDecision[]>([]);
   const [loading, setLoading] = useState(true);
+  const [executing, setExecuting] = useState(false);
   const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const data = await getRouterDecisions();
-      setDecisions(data);
-      setLoading(false);
+      try {
+        const data = await getRouterDecisions();
+        setDecisions(data);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
 
   const latestDecision = decisions[0];
-  const history = decisions.slice(1);
   const affectedSkus = latestDecision?.affected_skus ?? [];
-  const triggerSummary = latestDecision?.trigger_summary ?? "Triggered by the latest profit and customs risk analysis.";
-  const expectedOutcome = latestDecision?.expected_outcome ?? "Reduce operational risk and preserve margin on the affected catalogue.";
-  const comparisonGridClass = "grid items-stretch gap-4 lg:grid-cols-2";
 
   const handleAccept = () => {
-    setAccepted(true);
-    setTimeout(() => alert("Decision synchronized with logistics provider."), 500);
+    setExecuting(true);
+    setTimeout(() => {
+      setExecuting(false);
+      setAccepted(true);
+    }, 1000);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Smart Router</h1>
-        <p className="text-muted-foreground mt-1">See why this route is recommended and what it changes.</p>
+    <div className="space-y-8 pb-12">
+      {/* Standard Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
+              <Anchor className="h-6 w-6 text-blue-400" />
+            </div>
+            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">
+              Smart Router
+            </h1>
+          </div>
+          <p className="text-slate-400 text-lg">AI-driven cross-border fulfillment optimization.</p>
+        </div>
+        <Button disabled={loading || executing} className="bg-slate-800 hover:bg-slate-700 border border-white/10 text-white transition-all font-semibold px-6">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Re-evaluate Network
+        </Button>
       </div>
 
       {loading ? (
-        <Skeleton className="h-64 w-full" />
-      ) : latestDecision ? (
-        <Card className={`border-2 ${latestDecision.priority === 'URGENT' ? 'border-orange-500 shadow-orange-100' : 'border-blue-500'}`}>
-          <CardHeader className={`${latestDecision.priority === 'URGENT' ? 'bg-orange-500/10' : 'bg-blue-500/10'} border-b px-5 py-5 flex flex-row items-start justify-between gap-4`}>
-            <div className="space-y-2 text-left">
-              <CardDescription className="text-foreground font-semibold uppercase tracking-wider">Primary Recommendation</CardDescription>
-              <CardTitle className="text-2xl text-foreground flex items-center gap-2">
-                <Anchor className="h-6 w-6 text-blue-600" />
-                {latestDecision.action}
-              </CardTitle>
-            </div>
-            <Badge variant="destructive" className="mt-1 text-sm py-1 px-3 bg-orange-600 shadow-sm shrink-0">
-              {latestDecision.priority} PRIORITY
-            </Badge>
-          </CardHeader>
-          
-          <CardContent className="px-5 pt-6 pb-1 space-y-6">
-            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-5 text-left">
-              <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-blue-200">
-                <Link2 className="h-4 w-4" /> Trigger
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-blue-50/90">{triggerSummary}</p>
-            </div>
-
-            <div className="rounded-lg border bg-muted p-5 text-left text-foreground leading-relaxed font-medium">
-              <span className="font-bold text-foreground">Why this route: </span> {latestDecision.rationale}
-            </div>
-
-            <div className={comparisonGridClass}>
-              <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-5 min-h-32 flex flex-col justify-start text-left">
-                <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-300">
-                  <PackageSearch className="h-4 w-4" /> Affected SKUs
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {affectedSkus.map((skuId) => (
-                    <Badge key={skuId} variant="outline" className="border-slate-600 bg-slate-950 text-slate-100 font-mono">
-                      {skuId}
-                    </Badge>
-                  ))}
-                  {affectedSkus.length === 0 ? (
-                    <p className="text-sm text-slate-400">Affected SKU list is being prepared from the latest analysis.</p>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-5 min-h-32 flex flex-col justify-start text-left">
-                <div className="text-sm font-semibold uppercase tracking-wide text-emerald-300">Outcome</div>
-                <p className="mt-3 text-sm leading-relaxed text-emerald-50/90">{expectedOutcome}</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Route comparison</h4>
-              <div className={comparisonGridClass}>
-                <div className="border border-slate-200 rounded-lg p-5 space-y-4 opacity-60 min-h-44 text-left">
-                  <div className="flex items-center gap-2 text-slate-700 font-semibold">
-                    <Truck className="h-5 w-5" /> Sub-Optimal: Direct Shipping
-                  </div>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-red-500"/> SLA: 14-21 days (Customs Delay)</li>
-                    <li className="flex items-center gap-2"><ArrowRight className="h-4 w-4 text-slate-400"/> Fulfillment: MYR 12.00 / unit</li>
-                    <li className="flex items-center gap-2 text-red-600"><AlertTriangle className="h-4 w-4"/> High risk of parcel return</li>
-                  </ul>
-                </div>
-                
-                <div className="border border-blue-500/20 rounded-lg p-5 space-y-4 bg-blue-500/10 shadow-sm relative overflow-hidden min-h-44 text-left">
-                  <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 uppercase rounded-bl-lg">Recommended</div>
-                  <div className="flex items-center gap-2 text-blue-900 font-semibold">
-                    <MapPin className="h-5 w-5" /> Optimal: Jakarta Warehouse
-                  </div>
-                  <ul className="space-y-2 text-sm text-blue-800">
-                    <li className="flex items-center gap-2 font-medium"><CheckCircle2 className="h-4 w-4 text-green-600"/> SLA: 1-3 days Local</li>
-                    <li className="flex items-center gap-2"><ArrowRight className="h-4 w-4 text-blue-400"/> Fulfillment: MYR 14.50 / unit</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-600"/> Bypasses Red Light inspection</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            
-            <div className="rounded-md border border-yellow-500/20 bg-yellow-500/10 p-5 text-left text-sm text-yellow-500">
-              <span className="font-bold">Trade-off: </span>
-              {latestDecision.trade_offs}
-            </div>
-
+        <div className="space-y-6">
+          <Skeleton className="h-40 w-full bg-slate-800/50 rounded-2xl" />
+          <div className="grid grid-cols-2 gap-6">
+            <Skeleton className="h-64 w-full bg-slate-800/50 rounded-2xl" />
+            <Skeleton className="h-64 w-full bg-slate-800/50 rounded-2xl" />
+          </div>
+        </div>
+      ) : !latestDecision ? (
+        <Card className="bg-slate-900/60 backdrop-blur-xl border border-white/5 py-12 text-center">
+          <CardContent className="flex flex-col items-center">
+            <ShieldCheck className="h-16 w-16 text-emerald-500/50 mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Network Operating Optimally</h2>
+            <p className="text-slate-400">All SKUs are currently routing via their default optimal paths. No overrides necessary.</p>
           </CardContent>
-          <CardFooter className="bg-muted border-t px-5 py-5 flex justify-end gap-3">
-            <Button variant="outline" className="text-slate-600">Dismiss</Button>
-            <Button 
-              onClick={handleAccept} 
-              disabled={accepted} 
-              className={`bg-blue-600 hover:bg-blue-700 shadow-md transition-all ${accepted ? 'bg-green-600 hover:bg-green-600 opacity-100' : ''}`}
-              size="lg"
-            >
-              {accepted ? "Switch Executed ✓" : "Execute Recommendation"}
-            </Button>
-          </CardFooter>
         </Card>
       ) : (
-        <Card><CardContent className="p-6 text-slate-500">No active decisions available.</CardContent></Card>
-      )}
-
-      {history.length > 0 && (
-        <div className="pt-6">
-          <h3 className="text-lg font-semibold mb-4">Decision History</h3>
-          <div className="space-y-3">
-            {history.map(decision => (
-              <div key={decision.id} className="p-4 bg-card border rounded-lg flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-foreground">{decision.action}</div>
-                  <div className="text-sm text-slate-500">{new Date(decision.created_at).toLocaleString()}</div>
+        <div className="space-y-6">
+          {/* Main Action Card */}
+          <Card className="bg-slate-900/60 backdrop-blur-xl border border-white/5 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.8)]"></div>
+            <CardHeader className="pb-4">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="destructive" className="bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
+                      <AlertTriangle className="h-3 w-3 mr-1" /> Override Recommended
+                    </Badge>
+                    <Badge variant="outline" className="border-white/10 text-slate-400 bg-black/20">
+                      {latestDecision.priority} Priority
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-2xl font-bold text-white">{latestDecision.action}</CardTitle>
+                  <CardDescription className="text-slate-400 text-base">{latestDecision.rationale}</CardDescription>
                 </div>
-                <Badge variant="secondary">{decision.priority}</Badge>
+                <Button 
+                  onClick={handleAccept} 
+                  disabled={accepted || executing} 
+                  className={`shrink-0 transition-all font-bold px-6 py-6 ${accepted ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-600/20 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.4)]'}`}
+                >
+                  {executing ? (
+                    <><RefreshCw className="h-5 w-5 mr-2 animate-spin" /> Synchronizing...</>
+                  ) : accepted ? (
+                    <><ShieldCheck className="h-5 w-5 mr-2" /> Route Active</>
+                  ) : (
+                    <>Execute Route Switch <ArrowRight className="h-5 w-5 ml-2" /></>
+                  )}
+                </Button>
               </div>
-            ))}
+            </CardHeader>
+            <CardContent>
+              <div className="bg-black/30 rounded-lg p-4 border border-white/5 flex items-center gap-4">
+                <div className="text-xs font-bold uppercase tracking-widest text-slate-500 shrink-0">Affected SKUs</div>
+                <div className="flex flex-wrap gap-2">
+                  {affectedSkus.length > 0 ? (
+                    affectedSkus.map(sku => (
+                      <span key={sku} className="px-2 py-1 bg-slate-800 border border-white/10 text-slate-300 font-mono text-xs rounded-md">
+                        {sku}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-slate-500 italic">Global routing update</span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Comparison Cards */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Sub-Optimal (Current) */}
+            <Card className="bg-red-950/10 backdrop-blur-xl border border-red-500/20 relative overflow-hidden group">
+              <CardHeader>
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant="outline" className="border-red-500/30 text-red-400 bg-red-500/10">Current Default</Badge>
+                </div>
+                <CardTitle className="text-xl font-bold text-red-100 flex items-center gap-2">
+                  <Route className="h-5 w-5 text-red-400" /> Direct Shipping
+                </CardTitle>
+                <CardDescription className="text-red-200/60">Facing severe customs delay risks.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center p-3 rounded-lg bg-red-950/40 border border-red-500/10">
+                  <span className="text-sm text-red-300/80">Projected SLA</span>
+                  <span className="font-bold text-red-400">14-21 Days</span>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-red-950/40 border border-red-500/10">
+                  <span className="text-sm text-red-300/80">Delay Risk</span>
+                  <span className="font-bold text-red-400">High (95%)</span>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-red-950/40 border border-red-500/10">
+                  <span className="text-sm text-red-300/80">Margin Impact</span>
+                  <span className="font-bold text-red-500">Severe Loss</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Optimal (Recommended) */}
+            <Card className={`backdrop-blur-xl border relative overflow-hidden transition-all duration-500 ${accepted ? 'bg-emerald-950/10 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-blue-950/10 border-blue-500/30 hover:border-blue-500/50'}`}>
+              <CardHeader>
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant="outline" className={`border text-white ${accepted ? 'bg-emerald-500/30 border-emerald-500/50' : 'bg-blue-500/30 border-blue-500/50'}`}>
+                    {accepted ? 'Active Route' : 'AI Optimal'}
+                  </Badge>
+                </div>
+                <CardTitle className={`text-xl font-bold flex items-center gap-2 ${accepted ? 'text-emerald-100' : 'text-blue-100'}`}>
+                  <Zap className={`h-5 w-5 ${accepted ? 'text-emerald-400' : 'text-blue-400'}`} /> {latestDecision.action}
+                </CardTitle>
+                <CardDescription className={accepted ? 'text-emerald-200/60' : 'text-blue-200/60'}>Bypasses current inspection bottleneck.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className={`flex justify-between items-center p-3 rounded-lg border ${accepted ? 'bg-emerald-950/40 border-emerald-500/20' : 'bg-blue-950/40 border-blue-500/20'}`}>
+                  <span className={`text-sm ${accepted ? 'text-emerald-300/80' : 'text-blue-300/80'}`}>Projected SLA</span>
+                  <span className={`font-bold ${accepted ? 'text-emerald-400' : 'text-blue-400'}`}>1-3 Days</span>
+                </div>
+                <div className={`flex justify-between items-center p-3 rounded-lg border ${accepted ? 'bg-emerald-950/40 border-emerald-500/20' : 'bg-blue-950/40 border-blue-500/20'}`}>
+                  <span className={`text-sm ${accepted ? 'text-emerald-300/80' : 'text-blue-300/80'}`}>Delay Risk</span>
+                  <span className={`font-bold ${accepted ? 'text-emerald-400' : 'text-blue-400'}`}>Low (Stable)</span>
+                </div>
+                <div className={`flex justify-between items-center p-3 rounded-lg border ${accepted ? 'bg-emerald-950/40 border-emerald-500/20' : 'bg-blue-950/40 border-blue-500/20'}`}>
+                  <span className={`text-sm ${accepted ? 'text-emerald-300/80' : 'text-blue-300/80'}`}>Expected Outcome</span>
+                  <span className={`font-bold text-right pl-4 ${accepted ? 'text-emerald-400' : 'text-blue-400'}`}>{latestDecision.expected_outcome || "Preserve margin"}</span>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       )}

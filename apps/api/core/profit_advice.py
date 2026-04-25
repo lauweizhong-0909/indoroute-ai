@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Any
 from urllib.parse import urlencode
 
@@ -55,6 +56,42 @@ def _choose_best_option_fallback(options: list[dict[str, Any]]) -> str:
         ),
     )
     return ranked[0]["option_id"]
+
+
+def _parse_ai_json_payload(raw_response: str) -> dict[str, Any] | None:
+    """Best-effort parser for model responses that may include wrappers around JSON."""
+    cleaned = raw_response.replace("```json", "").replace("```", "").strip()
+
+    try:
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+
+    match = re.search(r"\{[\s\S]*\}", cleaned)
+    if not match:
+        return None
+
+    try:
+        parsed = json.loads(match.group(0))
+        return parsed if isinstance(parsed, dict) else None
+    except Exception:
+        return None
+
+
+def _normalize_option_id(candidate: Any, context_text: str = "") -> str | None:
+    value = str(candidate or "").strip().lower()
+    text = f"{value} {context_text}".lower()
+
+    if any(token in text for token in ["route", "router", "jakarta", "warehouse"]):
+        return "route"
+    if any(token in text for token in ["price", "pricing", "sell", "selling"]):
+        return "price"
+    if any(token in text for token in ["cost", "cogs", "supplier", "lower product cost"]):
+        return "cost"
+
+    return None
 
 
 async def get_profit_advice_for_sku(sku_id: str, db: Session) -> dict[str, Any]:
@@ -145,49 +182,67 @@ async def get_profit_advice_for_sku(sku_id: str, db: Session) -> dict[str, Any]:
 
     try:
         client = IlmuAIClient()
-        prompt = f"""
-You are a cross-border operations advisor for a Malaysian seller shipping into Indonesia.
-Choose exactly one best solution for this SKU from the provided options.
-Do not recalculate numbers. Use the supplied figures only.
-Prefer the option that most cleanly resolves the alert with the lowest operational downside.
-Return JSON only in this shape:
-{{
-  "best_option_id": "route|price|cost",
-  "headline": "short headline",
-  "rationale": "2 short sentences maximum"
-}}
-Context:
-{json.dumps({
-    "sku_id": sku.sku_id,
-    "financials": {
-        "revenue_myr": revenue_myr,
-        "duty_myr": duty_myr,
-        "shipping_myr": shipping_myr,
-        "net_profit_myr": net_profit_myr,
-        "margin_pct": margin_pct,
-    },
-    "delay_risk": delay_risk,
-    "options": [
-        {
-            "option_id": option["option_id"],
-            "title": option["title"],
-            "detail": option["detail"],
-            "resolves_alert": option["resolves_alert"],
-            "relative_change": option["relative_change"],
+        compact_context = {
+            "sku_id": sku.sku_id,
+            "financials": {
+                "net_profit_myr": net_profit_myr,
+                "margin_pct": margin_pct,
+                "shipping_myr": shipping_myr,
+            },
+            "delay_risk": delay_risk,
+            "options": [
+                {
+                    "option_id": option["option_id"],
+                    "resolves_alert": option["resolves_alert"],
+                    "relative_change": option["relative_change"],
+                }
+                for option in options
+            ],
         }
-        for option in options
-    ],
-})}
-"""
-        raw_response = await client.generate_response(prompt)
-        cleaned = raw_response.replace("```json", "").replace("```", "").strip()
-        parsed = json.loads(cleaned)
-        ai_option_id = parsed.get("best_option_id")
-        if ai_option_id in {option["option_id"] for option in options}:
-            best_option_id = ai_option_id
-            source = "ai"
-            headline = str(parsed.get("headline") or headline)
-            rationale = str(parsed.get("rationale") or rationale)
+        primary_prompt = (
+            "Pick the best option_id from route|price|cost using only the context. "
+            "Return JSON only: {\"best_option_id\":\"route|price|cost\",\"headline\":\"short headline\",\"rationale\":\"max 2 short sentences\"}. "
+            f"Context: {json.dumps(compact_context)}"
+        )
+        backup_prompt = (
+            "Return JSON only with keys best_option_id, headline, rationale. "
+            "best_option_id must be exactly one of route, price, cost. "
+            f"Context: {json.dumps(compact_context)}"
+        )
+
+        parsed: dict[str, Any] | None = None
+        for prompt in (primary_prompt, backup_prompt):
+            try:
+                parsed = await client.generate_json_response(prompt, timeout_seconds=90.0)
+                if parsed:
+                    break
+            except Exception:
+                continue
+
+        if parsed:
+            ai_option_id = _normalize_option_id(
+                parsed.get("best_option_id"),
+                f"{parsed.get('headline', '')} {parsed.get('rationale', '')}",
+            )
+            if ai_option_id in {option["option_id"] for option in options}:
+                best_option_id = ai_option_id
+                source = "ai"
+                headline = str(parsed.get("headline") or headline)
+                rationale = str(parsed.get("rationale") or rationale)
+        else:
+            # Final lightweight pass: ask the model to output only one option token.
+            token_prompt = (
+                "Choose one best option token from: route, price, cost. "
+                "Respond with only one token and nothing else. "
+                f"Context: {json.dumps(compact_context)}"
+            )
+            token_raw = await client.generate_response(token_prompt, temperature=0.0, timeout_seconds=45.0)
+            token_option_id = _normalize_option_id(token_raw)
+            if token_option_id in {option["option_id"] for option in options}:
+                best_option_id = token_option_id
+                source = "ai"
+                headline = "AI selected the best option for this SKU."
+                rationale = "Recommendation is based on the current margin, shipping risk, and operational trade-offs."
     except Exception:
         pass
 

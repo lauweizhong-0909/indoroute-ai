@@ -43,12 +43,26 @@ class AlertIngestRequest(BaseModel):
 
 # THIS IS THE ONE YOU WERE MISSING
 class AlertResponse(BaseModel):
-    id: int
-    news_text: str
-    created_at: datetime
+    id: str
+    title: str
+    body: str
+    date: str
+    is_active: bool
+    severity: str
+    risk_type: str
+    impact_summary: str
+    affected_targets: list[str] = []
+    affected_skus: list[str] = []
+    next_action: str
+    triggered_modules: list[str] = []
+    source: str = "manual"
+    source_url: str = ""
 
-    class Config:
-        from_attributes = True
+
+class AlertRefreshResponse(BaseModel):
+    imported_count: int
+    skipped_count: int
+    source: str
 
 
 class ProfitAdviceOption(BaseModel):

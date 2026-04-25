@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Plus, Upload } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Plus, Upload, Database } from "lucide-react";
 
 type IntakeRow = {
   sku_id: string;
@@ -477,100 +477,111 @@ export default function IntakePage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Data Intake</h1>
-        <p className="text-muted-foreground">
+    <div className="space-y-8 pb-12 text-slate-50">
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
+            <Database className="h-6 w-6 text-indigo-400" />
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            Data Intake
+          </h1>
+        </div>
+        <p className="text-slate-400 text-lg">
           Upload your SKU catalogue in CSV format, validate it, and prepare only the clean rows for the next analysis step.
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-4">
-        <Card className="border-l-4 border-l-slate-900">
+      <div className="grid gap-6 lg:grid-cols-4">
+        <Card className="bg-slate-900/40 backdrop-blur-xl border border-white/5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.8)]"></div>
           <CardHeader className="pb-2">
-            <CardDescription>Total rows</CardDescription>
-            <CardTitle>{stats.total}</CardTitle>
+            <CardDescription className="text-slate-400 font-bold uppercase tracking-widest text-xs">Total rows</CardDescription>
+            <CardTitle className="text-3xl font-bold">{stats.total}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="border-l-4 border-l-green-600">
+        <Card className="bg-slate-900/40 backdrop-blur-xl border border-white/5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.8)]"></div>
           <CardHeader className="pb-2">
-            <CardDescription>Ready to import</CardDescription>
-            <CardTitle className="text-green-700">{stats.valid}</CardTitle>
+            <CardDescription className="text-emerald-400/80 font-bold uppercase tracking-widest text-xs">Ready to import</CardDescription>
+            <CardTitle className="text-3xl font-bold text-emerald-400">{stats.valid}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="border-l-4 border-l-red-600">
+        <Card className="bg-slate-900/40 backdrop-blur-xl border border-white/5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)]"></div>
           <CardHeader className="pb-2">
-            <CardDescription>Need fixes</CardDescription>
-            <CardTitle className="text-red-700">{stats.invalid}</CardTitle>
+            <CardDescription className="text-red-400/80 font-bold uppercase tracking-widest text-xs">Need fixes</CardDescription>
+            <CardTitle className="text-3xl font-bold text-red-400">{stats.invalid}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="border-l-4 border-l-amber-500">
+        <Card className="bg-slate-900/40 backdrop-blur-xl border border-white/5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.8)]"></div>
           <CardHeader className="pb-2">
-            <CardDescription>Rows with warnings</CardDescription>
-            <CardTitle className="text-amber-700">{stats.warnings}</CardTitle>
+            <CardDescription className="text-yellow-500/80 font-bold uppercase tracking-widest text-xs">Warnings</CardDescription>
+            <CardTitle className="text-3xl font-bold text-yellow-400">{stats.warnings}</CardTitle>
           </CardHeader>
         </Card>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <Card>
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card className="bg-slate-900/40 backdrop-blur-xl border border-white/5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5" /> CSV Template
+            <CardTitle className="flex items-center gap-2 text-xl font-bold">
+              <FileSpreadsheet className="h-5 w-5 text-blue-400" /> CSV Template
             </CardTitle>
-            <CardDescription>Use the sample template so your column names match the expected schema exactly.</CardDescription>
+            <CardDescription className="text-slate-400">Use the sample template so your column names match the expected schema exactly.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm leading-relaxed">
-              <p className="font-medium">Required columns</p>
-              <p className="mt-2 font-mono text-xs sm:text-sm">{REQUIRED_COLUMNS.join(", ")}</p>
-              <p className="mt-4 font-medium">Optional columns</p>
-              <p className="mt-2 font-mono text-xs sm:text-sm">{OPTIONAL_COLUMNS.join(", ")}</p>
+          <CardContent className="space-y-6">
+            <div className="rounded-xl border border-white/5 bg-slate-950/50 p-5 text-sm leading-relaxed">
+              <p className="font-bold text-slate-300 uppercase tracking-widest text-xs mb-3">Required columns</p>
+              <p className="font-mono text-xs sm:text-sm text-blue-300">{REQUIRED_COLUMNS.join(", ")}</p>
+              <p className="font-bold text-slate-300 uppercase tracking-widest text-xs mt-5 mb-3">Optional columns</p>
+              <p className="font-mono text-xs sm:text-sm text-slate-400">{OPTIONAL_COLUMNS.join(", ")}</p>
             </div>
-            <div className="rounded-lg border border-sky-400/30 bg-sky-500/12 p-4 text-sm leading-relaxed text-sky-100">
-              <p className="font-semibold text-sky-50">Input rules</p>
-              <ul className="mt-2 space-y-1 text-sm text-sky-100">
-                <li>`bpom_certified` must be `Yes` or `No`</li>
-                <li>`cost_myr` and `selling_price_idr` must be numbers</li>
-                <li>`weight_g` must be a whole number greater than 0</li>
-                <li>`sku_id` must be unique across the uploaded batch</li>
+            <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-5 text-sm leading-relaxed">
+              <p className="font-bold text-blue-400 uppercase tracking-widest text-xs mb-3">Input rules</p>
+              <ul className="space-y-2 text-sm text-blue-100 font-medium">
+                <li><span className="text-blue-300 font-mono">bpom_certified</span> must be Yes or No</li>
+                <li><span className="text-blue-300 font-mono">cost_myr</span> and <span className="text-blue-300 font-mono">selling_price_idr</span> must be numbers</li>
+                <li><span className="text-blue-300 font-mono">weight_g</span> must be a whole number &gt; 0</li>
+                <li><span className="text-blue-300 font-mono">sku_id</span> must be unique across the uploaded batch</li>
               </ul>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-4">
               <a href="/sample-skus.csv" download>
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-blue-600 hover:bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)] font-bold transition-all">
                   <Download className="mr-2 h-4 w-4" /> Download sample CSV
                 </Button>
               </a>
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent">
-                <Upload className="h-4 w-4" />
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-slate-800 hover:bg-slate-700 px-4 py-2 text-sm font-bold transition-all shadow-sm">
+                <Upload className="h-4 w-4 text-emerald-400" />
                 Upload CSV
                 <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} />
               </label>
-              <Button variant="outline" onClick={handleClearAll} disabled={stats.total === 0 && fileErrors.length === 0}>
+              <Button variant="outline" onClick={handleClearAll} disabled={stats.total === 0 && fileErrors.length === 0} className="border-white/10 text-slate-400 hover:text-white">
                 Clear all
               </Button>
             </div>
             {lastFileName ? (
-              <Badge variant="outline" className="border-green-500/20 bg-green-500/10 text-green-600">
+              <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 px-3 py-1.5 font-medium">
                 Loaded: {lastFileName}
               </Badge>
             ) : null}
             {fileErrors.length > 0 ? (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-700">
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-200 font-medium space-y-2 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
                 {fileErrors.map((error) => (
-                  <p key={error}>{error}</p>
+                  <p key={error} className="flex items-center gap-2"><AlertCircle className="w-4 h-4 text-red-500" /> {error}</p>
                 ))}
               </div>
             ) : null}
             {hasLoadedRows ? (
-              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-50">
-                <p className="font-semibold text-emerald-100">After upload</p>
-                <p className="mt-2 text-emerald-50/90">
-                  Your CSV is parsed locally and shown in <span className="font-semibold">Prepared Rows</span> below.
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-sm">
+                <p className="font-bold text-emerald-400 uppercase tracking-widest text-xs mb-3">After upload</p>
+                <p className="mt-2 text-emerald-100/90 leading-relaxed">
+                  Your CSV is parsed locally and shown in <span className="font-bold text-white">Prepared Rows</span> below.
                   Once the rows look good, you can import the valid ones directly into the backend.
                 </p>
-                <p className="mt-2 text-emerald-50/90">
+                <p className="mt-3 font-bold text-emerald-300">
                   {hasInvalidRows
                     ? `Fix the rows marked "Needs fix", then import or export the ${stats.valid} valid row${stats.valid === 1 ? "" : "s"}.`
                     : `All ${stats.valid} row${stats.valid === 1 ? "" : "s"} are valid. You can import them now.`}
@@ -578,80 +589,80 @@ export default function IntakePage() {
               </div>
             ) : null}
             {importMessage ? (
-              <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-700">{importMessage}</div>
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-sm font-bold text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]">{importMessage}</div>
             ) : null}
             {importError ? (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-700">{importError}</div>
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-5 text-sm font-bold text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.1)]">{importError}</div>
             ) : null}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-slate-900/40 backdrop-blur-xl border border-white/5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" /> Manual Test Entry
+            <CardTitle className="flex items-center gap-2 text-xl font-bold">
+              <Plus className="h-5 w-5 text-purple-400" /> Manual Test Entry
             </CardTitle>
-            <CardDescription>Add one SKU manually when you want to test a specific scenario without editing a full CSV.</CardDescription>
+            <CardDescription className="text-slate-400">Add one SKU manually when you want to test a specific scenario without editing a full CSV.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+          <CardContent className="space-y-6">
+            <div className="grid gap-5 md:grid-cols-2">
               <label className="space-y-2 text-sm">
-                <span>SKU ID</span>
-                <input className="w-full rounded-md border border-border bg-background px-3 py-2" value={draft.sku_id} onChange={(e) => handleDraftChange("sku_id", e.target.value)} />
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">SKU ID</span>
+                <input className="w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-2.5 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" value={draft.sku_id} onChange={(e) => handleDraftChange("sku_id", e.target.value)} />
               </label>
               <label className="space-y-2 text-sm">
-                <span>Product name</span>
-                <input className="w-full rounded-md border border-border bg-background px-3 py-2" value={draft.product_name} onChange={(e) => handleDraftChange("product_name", e.target.value)} />
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Product name</span>
+                <input className="w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-2.5 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" value={draft.product_name} onChange={(e) => handleDraftChange("product_name", e.target.value)} />
               </label>
               <label className="space-y-2 text-sm">
-                <span>Category</span>
-                <input className="w-full rounded-md border border-border bg-background px-3 py-2" value={draft.category} onChange={(e) => handleDraftChange("category", e.target.value)} />
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Category</span>
+                <input className="w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-2.5 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" value={draft.category} onChange={(e) => handleDraftChange("category", e.target.value)} />
               </label>
               <label className="space-y-2 text-sm">
-                <span>HS code</span>
-                <input className="w-full rounded-md border border-border bg-background px-3 py-2" value={draft.hs_code} onChange={(e) => handleDraftChange("hs_code", e.target.value)} />
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">HS code</span>
+                <input className="w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-2.5 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" value={draft.hs_code} onChange={(e) => handleDraftChange("hs_code", e.target.value)} />
               </label>
               <label className="space-y-2 text-sm">
-                <span>Cost (MYR)</span>
-                <input className="w-full rounded-md border border-border bg-background px-3 py-2" value={draft.cost_myr} onChange={(e) => handleDraftChange("cost_myr", e.target.value)} />
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Cost (MYR)</span>
+                <input className="w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-2.5 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" value={draft.cost_myr} onChange={(e) => handleDraftChange("cost_myr", e.target.value)} />
               </label>
               <label className="space-y-2 text-sm">
-                <span>Selling price (IDR)</span>
-                <input className="w-full rounded-md border border-border bg-background px-3 py-2" value={draft.selling_price_idr} onChange={(e) => handleDraftChange("selling_price_idr", e.target.value)} />
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Selling price (IDR)</span>
+                <input className="w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-2.5 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" value={draft.selling_price_idr} onChange={(e) => handleDraftChange("selling_price_idr", e.target.value)} />
               </label>
               <label className="space-y-2 text-sm">
-                <span>Weight (g)</span>
-                <input className="w-full rounded-md border border-border bg-background px-3 py-2" value={draft.weight_g} onChange={(e) => handleDraftChange("weight_g", e.target.value)} />
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Weight (g)</span>
+                <input className="w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-2.5 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" value={draft.weight_g} onChange={(e) => handleDraftChange("weight_g", e.target.value)} />
               </label>
               <label className="space-y-2 text-sm">
-                <span>BPOM certified</span>
-                <select className="w-full rounded-md border border-border bg-background px-3 py-2" value={draft.bpom_certified} onChange={(e) => handleDraftChange("bpom_certified", e.target.value)}>
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">BPOM certified</span>
+                <select className="w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-2.5 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" value={draft.bpom_certified} onChange={(e) => handleDraftChange("bpom_certified", e.target.value)}>
                   <option value="">Select status</option>
                   <option value="Yes">Yes</option>
                   <option value="No">No</option>
                 </select>
               </label>
               <label className="space-y-2 text-sm">
-                <span>Balanced qty</span>
-                <input className="w-full rounded-md border border-border bg-background px-3 py-2" value={draft.balanced_qty} onChange={(e) => handleDraftChange("balanced_qty", e.target.value)} />
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Balanced qty</span>
+                <input className="w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-2.5 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" value={draft.balanced_qty} onChange={(e) => handleDraftChange("balanced_qty", e.target.value)} />
               </label>
               <label className="space-y-2 text-sm">
-                <span>Qty sold</span>
-                <input className="w-full rounded-md border border-border bg-background px-3 py-2" value={draft.qty_sold} onChange={(e) => handleDraftChange("qty_sold", e.target.value)} />
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Qty sold</span>
+                <input className="w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-2.5 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" value={draft.qty_sold} onChange={(e) => handleDraftChange("qty_sold", e.target.value)} />
               </label>
             </div>
             <label className="space-y-2 text-sm block">
-              <span>Description</span>
-              <textarea className="min-h-24 w-full rounded-md border border-border bg-background px-3 py-2" value={draft.description} onChange={(e) => handleDraftChange("description", e.target.value)} />
+              <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Description</span>
+              <textarea className="min-h-24 w-full rounded-lg border border-white/10 bg-black/40 text-white px-4 py-3 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none resize-y" value={draft.description} onChange={(e) => handleDraftChange("description", e.target.value)} />
             </label>
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={handleAddManualRow} className="bg-blue-600 hover:bg-blue-700">
+            <div className="flex flex-wrap gap-4 pt-2">
+              <Button onClick={handleAddManualRow} className="bg-purple-600 hover:bg-purple-500 font-bold transition-all shadow-[0_0_15px_rgba(147,51,234,0.3)]">
                 Add test SKU
               </Button>
-              <Button onClick={handleImportValidRows} disabled={!hasValidRows || isImporting}>
+              <Button onClick={handleImportValidRows} disabled={!hasValidRows || isImporting} className="bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all">
                 <Upload className="mr-2 h-4 w-4" /> {isImporting ? "Importing..." : "Import valid rows"}
               </Button>
-              <Button variant="outline" onClick={handleDownloadPreparedCsv} disabled={validatedRows.length === 0}>
+              <Button variant="outline" onClick={handleDownloadPreparedCsv} disabled={validatedRows.length === 0} className="border-white/10 bg-slate-800 hover:bg-slate-700 text-slate-200">
                 <Download className="mr-2 h-4 w-4" /> Export valid rows
               </Button>
             </div>
@@ -659,89 +670,91 @@ export default function IntakePage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="bg-slate-900/40 backdrop-blur-xl border border-white/5">
         <CardHeader>
-          <CardTitle>Prepared Rows</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl font-bold">Prepared Rows</CardTitle>
+          <CardDescription className="text-slate-400">
             Review the parsed rows after upload. Invalid rows are highlighted and excluded from export, and valid rows can be downloaded as a clean CSV.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {validatedRows.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed border-white/10 bg-slate-950/30 px-6 py-12 text-center text-sm text-slate-500 font-medium">
               No rows loaded yet. Download the sample CSV or add one SKU manually.
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            <div className="space-y-6">
+              <div className="rounded-xl border border-white/5 bg-black/40 px-5 py-4 text-sm text-slate-300">
                 {hasValidRows ? (
                   <p>
-                    Next step: click <span className="font-semibold text-foreground">Import valid rows</span> to send clean rows into the backend, or export them as CSV if you need a file.
+                    Next step: click <span className="font-bold text-blue-400">Import valid rows</span> to send clean rows into the backend, or export them as CSV if you need a file.
                   </p>
                 ) : (
                   <p>Next step: fix the rows marked below before exporting.</p>
                 )}
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>SKU ID</TableHead>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Cost</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Weight</TableHead>
-                    <TableHead>BPOM</TableHead>
-                    <TableHead>Validation</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {validatedRows.map((row) => (
-                    <TableRow key={row.id} className={row.isValid ? "" : "bg-red-500/5"}>
-                      <TableCell>
-                        {row.isValid ? (
-                          <Badge className="bg-green-500/15 text-green-700 hover:bg-green-500/15">
-                            <CheckCircle2 className="mr-1 h-3 w-3" /> Valid
-                          </Badge>
-                        ) : (
-                          <Badge variant="destructive">
-                            <AlertCircle className="mr-1 h-3 w-3" /> Needs fix
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{row.source === "csv" ? `CSV row ${row.rowNumber}` : `Manual ${row.rowNumber}`}</Badge>
-                      </TableCell>
-                      <TableCell className="font-mono">{row.values.sku_id || "-"}</TableCell>
-                      <TableCell>{row.values.product_name || "-"}</TableCell>
-                      <TableCell>{row.values.category || "-"}</TableCell>
-                      <TableCell>{row.values.cost_myr || "-"}</TableCell>
-                      <TableCell>{row.values.selling_price_idr || "-"}</TableCell>
-                      <TableCell>{row.values.weight_g || "-"}</TableCell>
-                      <TableCell>{row.values.bpom_certified || "Not provided"}</TableCell>
-                      <TableCell className="max-w-sm align-top">
-                        <div className="space-y-2 text-sm">
-                          {row.errors.map((error) => (
-                            <p key={error} className="text-red-700">
-                              {error}
-                            </p>
-                          ))}
-                          {row.warnings.map((warning) => (
-                            <p key={warning} className="text-amber-700">
-                              {warning}
-                            </p>
-                          ))}
-                          {row.errors.length === 0 && row.warnings.length === 0 ? (
-                            <p className="text-green-700">Ready for import.</p>
-                          ) : null}
-                        </div>
-                      </TableCell>
+              <div className="rounded-md border border-white/5 overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-slate-950/50">
+                    <TableRow className="border-b border-white/5 hover:bg-transparent">
+                      <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Status</TableHead>
+                      <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Source</TableHead>
+                      <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">SKU ID</TableHead>
+                      <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Product Name</TableHead>
+                      <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Category</TableHead>
+                      <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Cost</TableHead>
+                      <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Price</TableHead>
+                      <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Weight</TableHead>
+                      <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">BPOM</TableHead>
+                      <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Validation</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {validatedRows.map((row) => (
+                      <TableRow key={row.id} className={`border-b border-white/5 ${row.isValid ? "hover:bg-white/5" : "bg-red-500/10 hover:bg-red-500/20"}`}>
+                        <TableCell>
+                          {row.isValid ? (
+                            <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 shadow-sm">
+                              <CheckCircle2 className="mr-1 h-3 w-3" /> Valid
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="bg-red-500/20 text-red-400 border border-red-500/50 shadow-sm">
+                              <AlertCircle className="mr-1 h-3 w-3" /> Needs fix
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="border-white/10 bg-black/40 text-slate-300">{row.source === "csv" ? `CSV row ${row.rowNumber}` : `Manual ${row.rowNumber}`}</Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-white">{row.values.sku_id || "-"}</TableCell>
+                        <TableCell className="text-slate-300">{row.values.product_name || "-"}</TableCell>
+                        <TableCell className="text-slate-300">{row.values.category || "-"}</TableCell>
+                        <TableCell className="text-slate-300">{row.values.cost_myr || "-"}</TableCell>
+                        <TableCell className="text-slate-300">{row.values.selling_price_idr || "-"}</TableCell>
+                        <TableCell className="text-slate-300">{row.values.weight_g || "-"}</TableCell>
+                        <TableCell className="text-slate-300">{row.values.bpom_certified || "Not provided"}</TableCell>
+                        <TableCell className="max-w-sm align-top">
+                          <div className="space-y-2 text-sm">
+                            {row.errors.map((error) => (
+                              <p key={error} className="text-red-400 font-medium">
+                                {error}
+                              </p>
+                            ))}
+                            {row.warnings.map((warning) => (
+                              <p key={warning} className="text-yellow-400 font-medium">
+                                {warning}
+                              </p>
+                            ))}
+                            {row.errors.length === 0 && row.warnings.length === 0 ? (
+                              <p className="text-emerald-400 font-medium">Ready for import.</p>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>

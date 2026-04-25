@@ -7,7 +7,7 @@ import { SKU, ProfitResult, RouterDecision, CustomsAlert, ProfitAdvice } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Info, AlertTriangle, Calculator, RefreshCw, ArrowRight } from 'lucide-react';
+import { Info, AlertTriangle, Calculator, RefreshCw, ArrowRight, TrendingUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -110,299 +110,288 @@ export default function ProfitPage() {
       : 'healthy';
   const bestAdviceOption = profitAdvice?.options.find((option) => option.option_id === profitAdvice.best_option_id) ?? null;
   const alternativeAdviceOptions = profitAdvice?.options.filter((option) => option.option_id !== profitAdvice.best_option_id) ?? [];
-  const adviceSourceLabel = profitAdvice?.source === "ai" ? "AI recommendation" : "Best available recommendation";
+  const adviceSourceIsAi = profitAdvice?.source === "ai";
+  const adviceSourceLabel = adviceSourceIsAi ? "AI recommendation" : "Best available recommendation";
+  const bestSolutionLabel = adviceSourceIsAi ? "AI RECOMMENDATION" : "BEST AVAILABLE RECOMMENDATION";
+  const bestSolutionHeadline = adviceSourceIsAi
+    ? "AI picked this option from the live SKU context."
+    : "Recommended fix selected from the current SKU economics.";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Profit Shield</h1>
-          <p className="text-muted-foreground mt-1">See which SKUs are making money and which are not.</p>
+    <div className="space-y-8 pb-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
+              <TrendingUp className="h-6 w-6 text-blue-400" />
+            </div>
+            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">
+              Profit Shield
+            </h1>
+          </div>
+          <p className="text-slate-400 text-lg">Real-time margin analysis and protection.</p>
         </div>
-        <Button onClick={handleRecalculate} disabled={recalculating} size="icon" variant="outline">
-              <RefreshCw className={`h-5 w-5 ${recalculating ? 'animate-spin' : ''}`} />
+        <Button onClick={handleRecalculate} disabled={recalculating} className="bg-slate-800 hover:bg-slate-700 border border-white/10 text-white font-semibold transition-all">
+          <RefreshCw className={`mr-2 h-4 w-4 ${recalculating ? 'animate-spin' : ''}`} />
+          Refresh Metrics
         </Button>
       </div>
 
       {loading ? (
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full bg-slate-800/50 rounded-2xl" />
       ) : worstLossProfit ? (
-        <Card className="border-red-500/30 bg-red-500/5">
-          <CardContent className="p-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-red-600 font-semibold uppercase tracking-wide text-sm">
-                <AlertTriangle className="h-4 w-4" /> Immediate margin risk
-              </div>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                {worstLossProfit.sku_id} is currently losing {formatMYR(Math.abs(worstLossProfit.net_profit_myr))} per unit
-              </h2>
-              <p className="text-muted-foreground max-w-3xl">
-                Current direct-shipping costs are wiping out margin. Review the recommended routing response before dispatching the next batch.
-              </p>
-              {routerDecision ? (
-                <p className="text-sm text-slate-600">
-                  Next best step: <span className="font-semibold text-foreground">{routerDecision.action}</span>
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl blur opacity-25"></div>
+          <Card className="relative border border-red-500/30 bg-[#0f172a]/80 backdrop-blur-xl">
+            <CardContent className="p-6 md:p-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-red-500 font-bold uppercase tracking-widest text-xs bg-red-500/10 w-fit px-3 py-1 rounded-full border border-red-500/20">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Immediate margin risk
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+                  <span className="text-red-400">{worstLossProfit.sku_id}</span> is currently losing {formatMYR(Math.abs(worstLossProfit.net_profit_myr))} per unit
+                </h2>
+                <p className="text-slate-400 max-w-3xl text-sm leading-relaxed">
+                  Current direct-shipping costs are wiping out margin. Review the recommended routing response before dispatching the next batch.
                 </p>
-              ) : null}
-            </div>
-            <Link href="/router">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                Review fix in Smart Router <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+                {routerDecision ? (
+                  <div className="bg-white/5 inline-block px-4 py-2 rounded-lg border border-white/5">
+                    <p className="text-sm text-slate-300">
+                      AI Action: <span className="font-bold text-blue-400">{routerDecision.action}</span>
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+              <Link href="/router" className="shrink-0">
+                <Button size="lg" className="bg-red-600 hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.3)] font-bold transition-all">
+                  Review fix in Smart Router <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       ) : topLowMarginProfit ? (
-        <Card className="border-yellow-500/30 bg-yellow-500/5">
-          <CardContent className="p-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-yellow-600 font-semibold uppercase tracking-wide text-sm">
-                <AlertTriangle className="h-4 w-4" /> Low margin warning
-              </div>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                {topLowMarginProfit.sku_id} is still profitable, but margin is only {(topLowMarginProfit.margin_pct * 100).toFixed(1)}%
-              </h2>
-              <p className="text-muted-foreground max-w-3xl">
-                Margin is thin enough that duty, shipping, or routing changes could push this SKU into the red.
-              </p>
-              {routerDecision ? (
-                <p className="text-sm text-slate-600">
-                  Next best step: <span className="font-semibold text-foreground">{routerDecision.action}</span>
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl blur opacity-20"></div>
+          <Card className="relative border border-yellow-500/30 bg-[#0f172a]/80 backdrop-blur-xl">
+            <CardContent className="p-6 md:p-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-yellow-500 font-bold uppercase tracking-widest text-xs bg-yellow-500/10 w-fit px-3 py-1 rounded-full border border-yellow-500/20">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Low margin warning
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+                  <span className="text-yellow-400">{topLowMarginProfit.sku_id}</span> margin is critically low at {(topLowMarginProfit.margin_pct * 100).toFixed(1)}%
+                </h2>
+                <p className="text-slate-400 max-w-3xl text-sm leading-relaxed">
+                  Margin is thin enough that duty, shipping, or routing changes could push this SKU into the red.
                 </p>
-              ) : null}
-            </div>
-            <Link href="/router">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                Review fix in Smart Router <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+                {routerDecision ? (
+                  <div className="bg-white/5 inline-block px-4 py-2 rounded-lg border border-white/5">
+                    <p className="text-sm text-slate-300">
+                      AI Action: <span className="font-bold text-blue-400">{routerDecision.action}</span>
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+              <Link href="/router" className="shrink-0">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] font-bold transition-all">
+                  Optimize Route <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
 
-      <Card>
+      <Card className="bg-slate-900/40 backdrop-blur-xl border border-white/5">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Calculator className="h-5 w-5"/> Margin Analysis</CardTitle>
-          <CardDescription>Click a row for result, cause, and next action.</CardDescription>
+          <CardTitle className="flex items-center gap-2 text-xl font-bold"><Calculator className="h-5 w-5 text-emerald-400"/> Margin Analysis Table</CardTitle>
+          <CardDescription className="text-slate-400">Click a row for result, cause, and next action.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-10 w-full bg-slate-800/50" />
+              <Skeleton className="h-16 w-full bg-slate-800/50" />
+              <Skeleton className="h-16 w-full bg-slate-800/50" />
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>SKU ID</TableHead>
-                  <TableHead>Selling Price (IDR)</TableHead>
-                  <TableHead>Base Cost (MYR)</TableHead>
-                  <TableHead>Net Profit (MYR)</TableHead>
-                  <TableHead>Margin %</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {skus.map((sku) => {
-                  const profit = profits.find(p => p.sku_id === sku.sku_id);
-                  const rowTone = !profit
-                    ? 'unknown'
-                    : profit.net_profit_myr < 0
-                      ? 'loss'
-                      : profit.margin_pct < 0.08
-                        ? 'warning'
-                        : 'healthy';
-                  const marginColor = !profit ? 'text-slate-500' :
-                    rowTone === 'loss' ? 'text-red-600 font-bold' :
-                    rowTone === 'warning' ? 'text-yellow-600 font-bold' :
-                    'text-green-600 font-bold';
-                  const rowClass = rowTone === 'loss'
-                    ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/20'
-                    : rowTone === 'warning'
-                      ? 'bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/20'
-                      : '';
-                  
-                  return (
-                    <TableRow 
-                      key={sku.sku_id} 
-                      className={`cursor-pointer ${rowClass}`}
-                      onClick={() => profit && setSelectedProfit(profit)}
-                    >
-                      <TableCell className="font-mono">{sku.sku_id}</TableCell>
-                      <TableCell>{formatIDR(sku.price_idr)}</TableCell>
-                      <TableCell>{formatMYR(sku.cost_myr)}</TableCell>
-                      <TableCell>
-                        {profit ? (
-                          <span className={profit.net_profit_myr < 0 ? 'text-red-600' : ''}>
-                            {formatMYR(profit.net_profit_myr)}
-                          </span>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell className={marginColor}>
-                        {profit ? `${(profit.margin_pct * 100).toFixed(1)}%` : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {rowTone === 'loss' ? (
-                          <Badge variant="destructive" className="animate-pulse shadow-sm shadow-red-500/50"><AlertTriangle className="w-3 h-3 mr-1"/> Margin Alert</Badge>
-                        ) : rowTone === 'warning' ? (
-                          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-500/30">Low Margin</Badge>
-                        ) : profit ? (
-                          <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Healthy</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-slate-400">N/A</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <div className="rounded-md border border-white/5 overflow-hidden">
+              <Table>
+                <TableHeader className="bg-slate-950/50">
+                  <TableRow className="border-b border-white/5 hover:bg-transparent">
+                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">SKU ID</TableHead>
+                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Selling Price</TableHead>
+                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Base Cost</TableHead>
+                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Net Profit</TableHead>
+                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Margin %</TableHead>
+                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-xs">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {skus.map((sku) => {
+                    const profit = profits.find(p => p.sku_id === sku.sku_id);
+                    const rowTone = !profit
+                      ? 'unknown'
+                      : profit.net_profit_myr < 0
+                        ? 'loss'
+                        : profit.margin_pct < 0.08
+                          ? 'warning'
+                          : 'healthy';
+                    const marginColor = !profit ? 'text-slate-500' :
+                      rowTone === 'loss' ? 'text-red-400 font-bold' :
+                      rowTone === 'warning' ? 'text-yellow-400 font-bold' :
+                      'text-emerald-400 font-bold';
+                    const rowClass = rowTone === 'loss'
+                      ? 'bg-red-500/5 hover:bg-red-500/10'
+                      : rowTone === 'warning'
+                        ? 'bg-yellow-500/5 hover:bg-yellow-500/10'
+                        : 'hover:bg-white/5';
+                    
+                    return (
+                      <TableRow 
+                        key={sku.sku_id} 
+                        className={`cursor-pointer border-b border-white/5 transition-colors ${rowClass}`}
+                        onClick={() => profit && setSelectedProfit(profit)}
+                      >
+                        <TableCell className="font-mono text-white">{sku.sku_id}</TableCell>
+                        <TableCell className="text-slate-300">{formatIDR(sku.price_idr)}</TableCell>
+                        <TableCell className="text-slate-300">{formatMYR(sku.cost_myr)}</TableCell>
+                        <TableCell className="font-medium">
+                          {profit ? (
+                            <span className={profit.net_profit_myr < 0 ? 'text-red-400 font-bold' : 'text-slate-100'}>
+                              {formatMYR(profit.net_profit_myr)}
+                            </span>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell className={marginColor}>
+                          {profit ? `${(profit.margin_pct * 100).toFixed(1)}%` : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {rowTone === 'loss' ? (
+                            <Badge variant="destructive" className="animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)] border border-red-500/50 bg-red-500/20 text-red-300"><AlertTriangle className="w-3 h-3 mr-1"/> Margin Alert</Badge>
+                          ) : rowTone === 'warning' ? (
+                            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/30">Low Margin</Badge>
+                          ) : profit ? (
+                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Healthy</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-slate-500 border-slate-700">N/A</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       <Sheet open={!!selectedProfit} onOpenChange={(open) => !open && setSelectedProfit(null)}>
-        <SheetContent className="overflow-y-auto px-8">
+        <SheetContent className="overflow-y-auto px-8 bg-[#0f172a]/95 backdrop-blur-2xl border-l border-white/10 sm:max-w-md">
           <SheetHeader className="mb-6">
-            <SheetTitle>Profit Review</SheetTitle>
-            <SheetDescription>
+            <SheetTitle className="text-white font-bold">Profit Review</SheetTitle>
+            <SheetDescription className="text-slate-400">
               {selectedProfit?.sku_id} result
             </SheetDescription>
           </SheetHeader>
           
           <div className="space-y-6">
-            <div className={`rounded-lg border p-5 ${
+            <div className={`rounded-xl border p-5 relative overflow-hidden ${
               selectedStatusTone === 'loss'
-                ? 'bg-red-500/10 border-red-500/20'
+                ? 'bg-red-500/10 border-red-500/30'
                 : selectedStatusTone === 'warning'
-                  ? 'bg-yellow-500/10 border-yellow-500/20'
-                  : 'bg-blue-500/10 border-blue-500/20'
+                  ? 'bg-yellow-500/10 border-yellow-500/30'
+                  : 'bg-emerald-500/10 border-emerald-500/30'
             }`}>
-              <div className="flex items-start gap-3">
+              <div className={`absolute top-0 left-0 w-1 h-full ${
+                selectedStatusTone === 'loss' ? 'bg-red-500' :
+                selectedStatusTone === 'warning' ? 'bg-yellow-500' : 'bg-emerald-500'
+              }`}></div>
+              <div className="flex items-start gap-4">
                 <Info className={`w-5 h-5 mt-0.5 shrink-0 ${
-                  selectedStatusTone === 'loss'
-                    ? 'text-red-500'
-                    : selectedStatusTone === 'warning'
-                      ? 'text-yellow-600'
-                      : 'text-blue-400'
+                  selectedStatusTone === 'loss' ? 'text-red-400' :
+                  selectedStatusTone === 'warning' ? 'text-yellow-400' : 'text-emerald-400'
                 }`} />
                 <div className="space-y-2">
-                  <p className={`text-xs font-semibold uppercase tracking-wide ${
-                    selectedStatusTone === 'loss'
-                      ? 'text-red-500'
-                      : selectedStatusTone === 'warning'
-                        ? 'text-yellow-700'
-                        : 'text-blue-300'
-                  }`}>Result</p>
-                  <h3 className="text-2xl font-semibold tracking-tight">
+                  <p className={`text-xs font-bold uppercase tracking-widest ${
+                    selectedStatusTone === 'loss' ? 'text-red-400' :
+                    selectedStatusTone === 'warning' ? 'text-yellow-500' : 'text-emerald-400'
+                  }`}>Analysis Result</p>
+                  <h3 className="text-xl font-bold text-white">
                     {selectedProfit
                       ? isLossMaking
-                        ? `${selectedProfit.sku_id} is losing ${formatMYR(Math.abs(selectedProfit.net_profit_myr))} per unit`
+                        ? `${selectedProfit.sku_id} is losing ${formatMYR(Math.abs(selectedProfit.net_profit_myr))} / unit`
                         : isLowMarginWarning
-                          ? `${selectedProfit.sku_id} is still profitable, but margin is only ${(selectedProfit.margin_pct * 100).toFixed(1)}%`
+                          ? `${selectedProfit.sku_id} margin is only ${(selectedProfit.margin_pct * 100).toFixed(1)}%`
                           : `${selectedProfit.sku_id} is currently profitable`
                       : "No SKU selected"}
                   </h3>
-                  <p className="text-sm font-medium leading-relaxed text-foreground/90">{selectedProfit?.explanation}</p>
+                  <p className="text-sm font-medium leading-relaxed text-slate-300">{selectedProfit?.explanation}</p>
                 </div>
               </div>
             </div>
 
             {selectedProfit?.alert ? (
-              <div className="rounded-lg border border-border bg-muted/40 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Best solution</p>
+              <div className="rounded-xl border border-white/10 bg-slate-900/50 p-5 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Best solution</p>
+                  <Badge variant="outline" className={adviceSourceIsAi ? "border-blue-400/40 bg-blue-500/20 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.3)]" : "border-slate-500/40 bg-slate-500/20 text-slate-300"}>
+                    {adviceSourceIsAi ? "AI Engine" : "Fallback"}
+                  </Badge>
+                </div>
                 {adviceLoading ? (
-                  <div className="mt-3 space-y-3">
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-20 w-full" />
+                  <div className="space-y-3">
+                    <Skeleton className="h-24 w-full bg-slate-800/50 rounded-lg" />
+                    <Skeleton className="h-20 w-full bg-slate-800/50 rounded-lg" />
                   </div>
                 ) : bestAdviceOption && profitAdvice ? (
-                  <div className="mt-3 space-y-3">
-                    <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-blue-100">{profitAdvice.headline}</p>
-                          <p className="mt-1 text-xs uppercase tracking-wide text-blue-300">
-                            {adviceSourceLabel}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="border-blue-400/40 bg-blue-400/10 text-blue-200">Recommended</Badge>
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-5 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-black tracking-widest px-3 py-1 uppercase rounded-bl-lg">Primary</div>
+                      <p className="font-bold text-white mb-2">{bestAdviceOption.title}</p>
+                      <p className="text-sm text-slate-300 leading-relaxed mb-4">{bestAdviceOption.detail}</p>
+                      <div className="text-xs bg-black/30 p-3 rounded-md text-slate-400 border border-white/5 font-medium leading-relaxed mb-4">
+                        {profitAdvice.rationale}
                       </div>
-                      <p className="mt-3 font-semibold text-slate-50">{bestAdviceOption.title}</p>
-                      <p className="mt-1 text-sm text-slate-200">{bestAdviceOption.detail}</p>
-                      <p className="mt-3 text-sm text-slate-300">{profitAdvice.rationale}</p>
-                      <Link href={bestAdviceOption.href}>
-                        <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+                      <Link href={bestAdviceOption.href} className="block">
+                        <Button className="w-full bg-blue-600 hover:bg-blue-500 font-bold transition-all shadow-[0_0_15px_rgba(59,130,246,0.4)]">
                           {bestAdviceOption.button_label} <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </Link>
                     </div>
-
-                    {alternativeAdviceOptions.length > 0 ? (
-                      <div className="space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Other options</p>
-                        {alternativeAdviceOptions.map((option) => (
-                          <div key={option.option_id} className="rounded-lg border border-border bg-background/70 p-4">
-                            <p className="font-semibold">{option.title}</p>
-                            <p className="mt-1 text-sm text-muted-foreground">{option.detail}</p>
-                            <Link href={option.href}>
-                              <Button className="mt-3" variant="outline">
-                                {option.button_label} <ArrowRight className="ml-2 h-4 w-4" />
-                              </Button>
-                            </Link>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-muted-foreground">Advice is not available right now. Try recalculating, or open Smart Router for a manual route decision.</p>
+                  <p className="text-sm text-slate-500 italic">Advice unavailable. Try recalculating.</p>
                 )}
               </div>
             ) : null}
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-lg border border-border bg-muted/40 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Revenue</p>
-                <p className="mt-2 text-lg font-semibold">{selectedSkuRecord ? formatIDR(selectedSkuRecord.price_idr) : "-"}</p>
-                <p className="text-sm text-muted-foreground">{formatMYR(selectedRevenueMyr)} after FX.</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-white/5 bg-slate-900/50 p-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Revenue</p>
+                <p className="mt-2 text-2xl font-extrabold text-white">{selectedSkuRecord ? formatIDR(selectedSkuRecord.price_idr) : "-"}</p>
+                <p className="text-sm text-slate-400 mt-1 font-mono">{formatMYR(selectedRevenueMyr)} after FX</p>
               </div>
-              <div className="rounded-lg border border-border bg-muted/40 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Costs</p>
-                <p className="mt-2 text-lg font-semibold">{selectedSkuRecord ? formatMYR(selectedTotalCost) : "-"}</p>
-                <p className="text-sm text-muted-foreground">Product, duty, shipping.</p>
-              </div>
-              <div className={`rounded-lg border p-4 ${
-                selectedStatusTone === 'loss'
-                  ? 'border-red-500/20 bg-red-500/10'
-                  : selectedStatusTone === 'warning'
-                    ? 'border-yellow-500/30 bg-yellow-500/10'
-                    : 'border-green-500/20 bg-green-500/10'
-              }`}>
-                <p className={`text-xs font-semibold uppercase tracking-wide ${
-                  selectedStatusTone === 'loss'
-                    ? 'text-red-500'
-                    : selectedStatusTone === 'warning'
-                      ? 'text-yellow-700'
-                      : 'text-green-600'
-                }`}>Net result</p>
-                <p className="mt-2 text-lg font-semibold">{selectedProfit ? formatMYR(selectedProfit.net_profit_myr) : "-"}</p>
-                <p className="text-sm text-muted-foreground">
-                  Margin {selectedProfit ? `${(selectedProfit.margin_pct * 100).toFixed(1)}%` : "-"}
-                </p>
+              <div className="rounded-xl border border-white/5 bg-slate-900/50 p-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Total Costs</p>
+                <p className="mt-2 text-2xl font-extrabold text-white">{selectedSkuRecord ? formatMYR(selectedTotalCost) : "-"}</p>
+                <p className="text-sm text-slate-400 mt-1">Product, duty, shipping.</p>
               </div>
             </div>
             
-            <div className="bg-muted p-4 rounded-lg border border-border">
-              <h4 className="text-xs font-semibold uppercase text-slate-500 tracking-wider mb-3">Calculation</h4>
-              <div className="font-mono text-sm space-y-2 text-slate-700">
-                <div className="flex justify-between"><span>Revenue (MYR):</span> <span>{selectedSkuRecord ? selectedRevenueMyr.toFixed(2) : "-"}</span></div>
-                <div className="flex justify-between text-red-600"><span>- Product Cost:</span> <span>{selectedSkuRecord ? selectedSkuRecord.cost_myr.toFixed(2) : "-"}</span></div>
-                <div className="flex justify-between text-red-600"><span>- Import Duty / VAT:</span> <span>{selectedDutyCost.toFixed(2)}</span></div>
-                <div className="flex justify-between text-red-600 border-b border-slate-300 shadow-sm pb-2"><span>- Shipping / Fulfillment:</span> <span>{selectedShippingCost.toFixed(2)}</span></div>
-                <div className="flex justify-between font-bold pt-1"><span>Net Profit:</span> <span>{selectedProfit?.net_profit_myr.toFixed(2)}</span></div>
+            <div className="bg-slate-950 p-5 rounded-xl border border-white/5">
+              <h4 className="text-xs font-bold uppercase text-slate-500 tracking-widest mb-4">Cost Breakdown</h4>
+              <div className="font-mono text-sm space-y-3 text-slate-300">
+                <div className="flex justify-between"><span>Revenue (MYR)</span> <span className="text-white">{selectedSkuRecord ? selectedRevenueMyr.toFixed(2) : "-"}</span></div>
+                <div className="flex justify-between text-red-400"><span>- Product Cost</span> <span>{selectedSkuRecord ? selectedSkuRecord.cost_myr.toFixed(2) : "-"}</span></div>
+                <div className="flex justify-between text-red-400"><span>- Import Duty/VAT</span> <span>{selectedDutyCost.toFixed(2)}</span></div>
+                <div className="flex justify-between text-red-400 border-b border-white/10 pb-3"><span>- Shipping</span> <span>{selectedShippingCost.toFixed(2)}</span></div>
+                <div className="flex justify-between font-bold text-lg pt-1">
+                  <span className="text-white">Net Profit</span> 
+                  <span className={isLossMaking ? 'text-red-400' : 'text-emerald-400'}>{selectedProfit?.net_profit_myr.toFixed(2)}</span>
+                </div>
               </div>
             </div>
           </div>

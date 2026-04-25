@@ -16,10 +16,10 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-sidebar min-h-screen text-sidebar-foreground flex flex-col border-r">
+    <aside className="w-64 bg-slate-900/40 backdrop-blur-xl border-r border-white/5 min-h-screen flex flex-col z-20">
       <div className="p-6">
-        <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <Anchor className="text-blue-500" />
+        <h1 className="text-xl font-extrabold flex items-center gap-2 bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+          <Anchor className="text-blue-500 h-6 w-6" />
           IndoRoute AI
         </h1>
       </div>
@@ -27,15 +27,17 @@ export default function Sidebar() {
         {routes.map((route) => {
           const active = pathname.startsWith(route.href);
           return (
-            <Link key={route.href} href={route.href} className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${active ? 'bg-sidebar-primary/20 text-sidebar-primary font-medium' : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`}>
-              <route.icon className="h-5 w-5" />
+            <Link key={route.href} href={route.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 font-medium ${active ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}`}>
+              <route.icon className={`h-5 w-5 ${active ? 'text-blue-400' : 'text-slate-500'}`} />
               {route.label}
             </Link>
           );
         })}
       </nav>
-      <div className="p-4 border-t border-slate-800 text-xs text-slate-500">
-        Demo Mode Active
+      <div className="p-4 border-t border-white/5 bg-black/20">
+        <div className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Demo Mode
+        </div>
       </div>
     </aside>
   );

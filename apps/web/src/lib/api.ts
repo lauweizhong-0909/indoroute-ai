@@ -18,6 +18,16 @@ type RawAlert = {
   title?: string;
   created_at?: string;
   date?: string;
+  is_active?: boolean;
+  severity?: string;
+  risk_type?: string;
+  impact_summary?: string;
+  affected_targets?: string[];
+  affected_skus?: string[];
+  next_action?: string;
+  triggered_modules?: string[];
+  source?: string;
+  source_url?: string;
 };
 
 type RawFxRate = {
@@ -164,6 +174,25 @@ export function deriveProfitResult(sku: SKU, hasDelayRisk: boolean, fxRate: numb
 }
 
 function normalizeAlert(raw: RawAlert): CustomsAlert {
+  if (raw.title && raw.body && typeof raw.is_active === "boolean") {
+    return {
+      id: String(raw.id),
+      title: String(raw.title),
+      body: String(raw.body),
+      date: String(raw.date ?? raw.created_at ?? new Date().toISOString()),
+      is_active: raw.is_active,
+      severity: raw.severity,
+      risk_type: raw.risk_type,
+      impact_summary: raw.impact_summary,
+      affected_targets: raw.affected_targets ?? [],
+      affected_skus: raw.affected_skus ?? [],
+      next_action: raw.next_action,
+      triggered_modules: raw.triggered_modules ?? [],
+      source: raw.source,
+      source_url: raw.source_url,
+    };
+  }
+
   const text = String(raw.news_text ?? raw.body ?? "");
   const title = String(raw.title ?? text.split(".")[0] ?? "Customs update").trim();
   const body = text || "Customs update received from backend.";
@@ -190,12 +219,17 @@ function normalizeAlert(raw: RawAlert): CustomsAlert {
       ? "Direct parcels are likely to see manual checks and slower clearance."
       : "This customs update may change landed cost or transit predictability.",
     affected_targets: affectedTargets,
+    affected_skus: [],
     next_action: lowered.includes("inspection")
       ? "Review Smart Router before sending the next direct-shipping batch."
       : "Review affected SKU economics and shipping plans.",
     triggered_modules: lowered.includes("inspection")
       ? ["Policy Sentinel", "Smart Router"]
       : ["Policy Sentinel"],
+    severity: lowered.includes("urgent") ? "URGENT" : lowered.includes("inspection") ? "HIGH" : "MEDIUM",
+    risk_type: lowered.includes("inspection") ? "customs_delay" : "general_customs",
+    source: "manual",
+    source_url: "",
   };
 }
 
@@ -319,6 +353,12 @@ export async function getProfitAdvice(skuId: string): Promise<ProfitAdvice | nul
     console.warn("Profit advice fetch failed.", err);
     return null;
   }
+}
+
+export async function refreshCustomsAlerts(): Promise<{ imported_count: number; skipped_count: number; source: string }> {
+  return fetchJson<{ imported_count: number; skipped_count: number; source: string }>("/api/alerts/refresh", {
+    method: "POST",
+  });
 }
 
 export function deriveProfitsFromInputs(skus: SKU[], alerts: CustomsAlert[], fxRate: number): ProfitResult[] {
