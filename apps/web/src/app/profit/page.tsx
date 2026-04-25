@@ -289,7 +289,7 @@ export default function ProfitPage() {
       </Card>
 
       <Sheet open={!!selectedProfit} onOpenChange={(open) => !open && setSelectedProfit(null)}>
-        <SheetContent className="overflow-y-auto px-8 bg-[#0f172a]/95 backdrop-blur-2xl border-l border-white/10 sm:max-w-md">
+        <SheetContent className="!w-screen sm:!w-1/2 !max-w-none overflow-y-auto px-8 bg-[#0f172a]/95 backdrop-blur-2xl border-l border-white/10">
           <SheetHeader className="mb-6">
             <SheetTitle className="text-white font-bold">Profit Review</SheetTitle>
             <SheetDescription className="text-slate-400">
