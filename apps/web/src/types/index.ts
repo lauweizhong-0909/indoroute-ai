@@ -11,6 +11,18 @@ export interface SKU {
 
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
+export interface ComplianceEvidence {
+  id: string;
+  type: "bpom" | "claim";
+  title: string;
+  detail: string;
+  field?: "name" | "description" | "bpom_certified";
+  matched_text?: string;
+  source_title: string;
+  source_url: string;
+  source_kind: "official_regulation" | "official_service" | "official_enforcement";
+}
+
 export interface ComplianceReport {
   sku_id: string;
   compliant: boolean;
@@ -19,6 +31,7 @@ export interface ComplianceReport {
   why_flagged?: string;
   fix_steps?: string[];
   shipment_status?: string;
+  evidence?: ComplianceEvidence[];
 }
 
 export interface ProfitResult {

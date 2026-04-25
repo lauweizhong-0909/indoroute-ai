@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { getSKUs, getCompliance } from "@/lib/api";
 import { buildComplianceGuidance } from "@/lib/complianceGuidance";
 import { SKU, ComplianceReport } from "@/types";
-import { ShieldAlert, ShieldCheck, Search, Info, PackageOpen } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Search, PackageOpen, FileText, Link as LinkIcon, ShieldQuestion } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 export default function CompliancePage() {
   const [skus, setSkus] = useState<SKU[]>([]);
@@ -20,6 +21,7 @@ export default function CompliancePage() {
   
   const [selectedSku, setSelectedSku] = useState<SKU | null>(null);
   const [selectedReport, setSelectedReport] = useState<ComplianceReport | null>(null);
+  const [activeTab, setActiveTab] = useState<"overview" | "evidence" | "action">("overview");
 
   useEffect(() => {
     async function load() {
@@ -39,6 +41,19 @@ export default function CompliancePage() {
 
   const getReportForSku = (skuId: string) => reports.find(r => r.sku_id === skuId);
   const guidance = buildComplianceGuidance(selectedSku, selectedReport);
+  const evidence = selectedReport?.evidence ?? [];
+  const officialSources = Array.from(
+    new Map(
+      evidence.map((item) => [
+        item.source_url,
+        {
+          title: item.source_title,
+          url: item.source_url,
+          kind: item.source_kind,
+        },
+      ]),
+    ).values(),
+  );
 
   return (
     <div className="space-y-8 pb-12">
@@ -100,6 +115,7 @@ export default function CompliancePage() {
                         onClick={() => {
                           setSelectedSku(sku);
                           if (report) setSelectedReport(report);
+                          setActiveTab("overview");
                         }}
                       >
                         <TableCell className="font-mono text-white">{sku.sku_id}</TableCell>
@@ -149,74 +165,148 @@ export default function CompliancePage() {
             {selectedReport && (
               <div className={`p-6 rounded-xl border relative overflow-hidden ${selectedReport.compliant ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
                 <div className={`absolute top-0 left-0 w-1 h-full ${selectedReport.compliant ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                <h4 className={`text-lg font-bold flex items-center gap-2 mb-6 ${selectedReport.compliant ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {selectedReport.compliant ? <ShieldCheck className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
-                  AI Assessment Results
-                </h4>
                 
-                {!selectedReport.compliant && (
-                  <div className="mb-6 bg-red-950/40 p-4 rounded-lg border border-red-500/20">
-                    <h5 className="text-xs font-bold text-red-400 uppercase tracking-widest mb-3">Red Flags Found</h5>
-                    <ul className="list-disc pl-5 space-y-2 text-sm text-red-200">
-                      {selectedReport.violations.map((v, i) => (
-                        <li key={i}>{v}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                <div className="space-y-6">
-                  <div>
-                    <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Core Issue</h5>
-                    <p className="text-sm leading-relaxed text-slate-200 font-medium bg-black/20 p-3 rounded-lg border border-white/5">
-                      {guidance?.whyFlagged ?? selectedReport.why_flagged ?? selectedReport.recommendation}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Required Action</h5>
-                    {guidance?.fixSteps && guidance.fixSteps.length > 0 ? (
-                      <ul className="list-disc pl-5 space-y-2 text-sm leading-relaxed text-slate-300">
-                        {guidance.fixSteps.map((step, i) => (
-                          <li key={i}>{step}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm font-medium text-emerald-400">✓ No changes needed. This SKU is ready for shipment.</p>
-                    )}
-                  </div>
-
-                  {guidance?.replacementExamples && guidance.replacementExamples.length > 0 ? (
-                    <div>
-                      <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">AI Suggested Copy</h5>
-                      <ul className="list-disc pl-5 space-y-2 text-sm leading-relaxed text-blue-300 font-mono bg-blue-950/20 p-3 rounded-lg border border-blue-500/20">
-                        {guidance.replacementExamples.map((example, i) => (
-                          <li key={i}>{example}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Shipment Status</h5>
-                      <Badge variant="outline" className={`text-sm font-bold px-3 py-1 ${selectedReport.compliant ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' : 'bg-red-500/20 border-red-500/50 text-red-300'}`}>
-                        {guidance?.shipmentStatus ?? selectedReport.shipment_status ?? "Pending review"}
-                      </Badge>
-                    </div>
-
-                    <div>
-                      <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">System Recommendation</h5>
-                      <p className="text-sm font-bold text-slate-200">{guidance?.recommendation ?? selectedReport.recommendation}</p>
-                    </div>
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 border-b border-white/10 pb-4">
+                  <h4 className={`text-lg font-bold flex items-center gap-2 ${selectedReport.compliant ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {selectedReport.compliant ? <ShieldCheck className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
+                    AI Assessment Results
+                  </h4>
+                  <div className="flex gap-2 flex-wrap bg-black/20 p-1 rounded-full border border-white/5">
+                    <Button variant="ghost" size="sm" onClick={() => setActiveTab("overview")} className={`rounded-full px-4 h-8 text-xs font-bold transition-all ${activeTab === 'overview' ? 'bg-white/15 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Overview</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setActiveTab("evidence")} className={`rounded-full px-4 h-8 text-xs font-bold transition-all ${activeTab === 'evidence' ? 'bg-white/15 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Evidence & Basis</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setActiveTab("action")} className={`rounded-full px-4 h-8 text-xs font-bold transition-all ${activeTab === 'action' ? 'bg-white/15 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Action Plan</Button>
                   </div>
                 </div>
+                
+                {activeTab === 'overview' && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {!selectedReport.compliant && (
+                      <div className="bg-red-950/40 p-4 rounded-lg border border-red-500/20">
+                        <h5 className="text-xs font-bold text-red-400 uppercase tracking-widest mb-3">Red Flags Found</h5>
+                        <ul className="list-disc pl-5 space-y-2 text-sm text-red-200">
+                          {selectedReport.violations.map((v, i) => (
+                            <li key={i}>{v}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Core Issue</h5>
+                      <p className="text-sm leading-relaxed text-slate-200 font-medium bg-black/20 p-3 rounded-lg border border-white/5">
+                        {guidance?.whyFlagged ?? selectedReport.why_flagged ?? selectedReport.recommendation}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Shipment Status</h5>
+                        <Badge variant="outline" className={`text-sm font-bold px-3 py-1 ${selectedReport.compliant ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' : 'bg-red-500/20 border-red-500/50 text-red-300'}`}>
+                          {guidance?.shipmentStatus ?? selectedReport.shipment_status ?? "Pending review"}
+                        </Badge>
+                      </div>
+
+                      <div>
+                        <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">System Recommendation</h5>
+                        <p className="text-sm font-bold text-slate-200">{guidance?.recommendation ?? selectedReport.recommendation}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'evidence' && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {evidence.length > 0 ? (
+                      <div>
+                        <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Evidence</h5>
+                        <div className="space-y-3">
+                          {evidence.map((item) => (
+                            <div key={item.id} className="rounded-lg border border-white/10 bg-black/20 p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-sm font-semibold text-white">{item.title}</p>
+                                <Badge variant="outline" className="border-white/10 bg-background/30 text-slate-300">
+                                  {item.field === "bpom_certified" ? "SKU record" : item.field}
+                                </Badge>
+                              </div>
+                              <p className="mt-2 text-sm leading-relaxed text-slate-300">{item.detail}</p>
+                              {item.matched_text ? (
+                                <p className="mt-2 text-xs font-mono text-orange-300">
+                                  Matched text: {item.matched_text}
+                                </p>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : <p className="text-slate-400 italic text-sm">No specific evidence recorded.</p>}
+
+                    {officialSources.length > 0 ? (
+                      <div>
+                        <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Official Basis</h5>
+                        <div className="space-y-3">
+                          {officialSources.map((source) => (
+                            <div key={source.url} className="rounded-lg border border-blue-500/20 bg-blue-950/20 p-4">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4 text-blue-300" />
+                                    <p className="text-sm font-semibold text-blue-100">{source.title}</p>
+                                  </div>
+                                  <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-200">
+                                    {source.kind === "official_regulation"
+                                      ? "Official regulation"
+                                      : source.kind === "official_service"
+                                        ? "Official service guidance"
+                                        : "Official enforcement example"}
+                                  </Badge>
+                                </div>
+                                <Link href={source.url} target="_blank">
+                                  <Button variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-100 hover:bg-blue-500/20">
+                                    Open source <LinkIcon className="ml-2 h-4 w-4" />
+                                  </Button>
+                                </Link>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                {activeTab === 'action' && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div>
+                      <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Required Action</h5>
+                      {guidance?.fixSteps && guidance.fixSteps.length > 0 ? (
+                        <ul className="list-disc pl-5 space-y-2 text-sm leading-relaxed text-slate-300">
+                          {guidance.fixSteps.map((step, i) => (
+                            <li key={i}>{step}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm font-medium text-emerald-400">✓ No changes needed. This SKU is ready for shipment.</p>
+                      )}
+                    </div>
+
+                    {guidance?.replacementExamples && guidance.replacementExamples.length > 0 ? (
+                      <div>
+                        <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">AI Suggested Copy</h5>
+                        <ul className="list-disc pl-5 space-y-2 text-sm leading-relaxed text-blue-300 font-mono bg-blue-950/20 p-3 rounded-lg border border-blue-500/20">
+                          {guidance.replacementExamples.map((example, i) => (
+                            <li key={i}>{example}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
               </div>
             )}
             
             {!selectedReport && (
               <div className="p-5 rounded-xl border border-white/5 bg-slate-900/50 flex items-start gap-4">
-                <Info className="w-6 h-6 text-blue-400 mt-0.5 shrink-0" />
+                <ShieldQuestion className="w-6 h-6 text-blue-400 mt-0.5 shrink-0" />
                 <p className="text-sm text-slate-300 leading-relaxed">
                   This SKU has not been analyzed yet. Run a full scan on the main screen to assess compliance using the AI engine.
                 </p>

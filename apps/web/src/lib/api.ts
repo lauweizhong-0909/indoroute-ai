@@ -1,4 +1,4 @@
-import { ComplianceReport, CustomsAlert, ProfitAdvice, ProfitResult, RouterDecision, SKU } from "@/types";
+import { ComplianceEvidence, ComplianceReport, CustomsAlert, ProfitAdvice, ProfitResult, RouterDecision, SKU } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 const DEFAULT_FX_RATE = 3350;
@@ -62,6 +62,30 @@ const FORBIDDEN_KEYWORDS = [
   "skin disease",
 ];
 
+const OFFICIAL_COMPLIANCE_SOURCES = {
+  bpomNotification: {
+    title: "Direktorat Registrasi OTSKK BPOM - Layanan Notifikasi Kosmetik",
+    url: "https://registrasiotskk.pom.go.id/layanan",
+    kind: "official_service" as const,
+    summary:
+      "BPOM's cosmetics registration service states that cosmetics must obtain notification before circulation in Indonesia.",
+  },
+  cosmeticAdvertisingRule: {
+    title: "Peraturan BPOM No. 18 Tahun 2024 tentang Penandaan, Promosi, dan Iklan Kosmetik",
+    url: "https://jdih.pom.go.id/view/slide/1623/18/2024/07811dc6c422334ce36a09ff5cd6fe71",
+    kind: "official_regulation" as const,
+    summary:
+      "Official BPOM regulation governing cosmetic labelling, promotion, and advertising, including notification and compliant promotional practices.",
+  },
+  misleadingClaimsEnforcement: {
+    title: "BPOM enforcement on misleading cosmetic claims",
+    url: "https://www.pom.go.id/siaran-pers/bpom-cabut-izin-edar-8-kosmetik-kewanitaan-yang-melanggar-norma-kesusilaan",
+    kind: "official_enforcement" as const,
+    summary:
+      "Official BPOM press release showing enforcement against cosmetic products promoted with misleading or organ/function-changing claims.",
+  },
+};
+
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
@@ -103,8 +127,63 @@ function extractMatchedKeywords(text: string): string[] {
   return FORBIDDEN_KEYWORDS.filter((keyword) => normalized.includes(keyword));
 }
 
+function extractKeywordEvidence(sku: SKU): ComplianceEvidence[] {
+  const evidence: ComplianceEvidence[] = [];
+  const nameLower = sku.name.toLowerCase();
+  const descriptionLower = sku.description.toLowerCase();
+
+  FORBIDDEN_KEYWORDS.forEach((keyword) => {
+    const inName = nameLower.includes(keyword);
+    const inDescription = descriptionLower.includes(keyword);
+
+    if (!inName && !inDescription) {
+      return;
+    }
+
+    const field = inName ? "name" : "description";
+    evidence.push({
+      id: `claim-${keyword}-${field}`,
+      type: "claim",
+      title: `Restricted cosmetic claim detected: "${keyword}"`,
+      detail:
+        field === "name"
+          ? `The product name uses a medical-style or therapeutic term that can make the listing look like a treatment claim rather than a cosmetic claim.`
+          : `The product description uses a medical-style or therapeutic term that can make the listing look like a treatment claim rather than a cosmetic claim.`,
+      field,
+      matched_text: keyword,
+      source_title: OFFICIAL_COMPLIANCE_SOURCES.cosmeticAdvertisingRule.title,
+      source_url: OFFICIAL_COMPLIANCE_SOURCES.cosmeticAdvertisingRule.url,
+      source_kind: OFFICIAL_COMPLIANCE_SOURCES.cosmeticAdvertisingRule.kind,
+    });
+  });
+
+  return evidence;
+}
+
+function buildComplianceEvidence(sku: SKU): ComplianceEvidence[] {
+  const evidence: ComplianceEvidence[] = [];
+
+  if (!sku.bpom_certified) {
+    evidence.push({
+      id: "bpom-missing",
+      type: "bpom",
+      title: "BPOM notification evidence is missing",
+      detail:
+        "This SKU is marked as not BPOM certified, so it should not be treated as shipment-ready for Indonesian circulation without valid notification evidence.",
+      field: "bpom_certified",
+      matched_text: "No",
+      source_title: OFFICIAL_COMPLIANCE_SOURCES.bpomNotification.title,
+      source_url: OFFICIAL_COMPLIANCE_SOURCES.bpomNotification.url,
+      source_kind: OFFICIAL_COMPLIANCE_SOURCES.bpomNotification.kind,
+    });
+  }
+
+  return [...evidence, ...extractKeywordEvidence(sku)];
+}
+
 function deriveComplianceReport(sku: SKU): ComplianceReport {
   const matchedKeywords = extractMatchedKeywords(`${sku.name} ${sku.description}`);
+  const evidence = buildComplianceEvidence(sku);
   const violations: string[] = [];
 
   if (!sku.bpom_certified) {
@@ -135,6 +214,7 @@ function deriveComplianceReport(sku: SKU): ComplianceReport {
     recommendation: compliant
       ? "Approved for shipment."
       : "Pause shipment until the listing and certification issues are resolved.",
+    evidence,
   };
 }
 
