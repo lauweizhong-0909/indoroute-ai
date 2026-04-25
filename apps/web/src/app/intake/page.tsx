@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -292,6 +292,28 @@ export default function IntakePage() {
   const [isImporting, setIsImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const skuId = searchParams.get("sku_id");
+    if (!skuId) return;
+
+    setDraft({
+      sku_id: skuId,
+      product_name: searchParams.get("product_name") ?? "",
+      category: searchParams.get("category") ?? "",
+      hs_code: searchParams.get("hs_code") ?? "",
+      cost_myr: searchParams.get("cost_myr") ?? "",
+      selling_price_idr: searchParams.get("selling_price_idr") ?? "",
+      weight_g: searchParams.get("weight_g") ?? "",
+      bpom_certified: normalizeBpomValue(searchParams.get("bpom_certified") ?? ""),
+      description: searchParams.get("description") ?? "",
+      balanced_qty: searchParams.get("balanced_qty") ?? "",
+      qty_sold: searchParams.get("qty_sold") ?? "",
+    });
+    setImportMessage(`Loaded ${skuId} into the manual editor. Update the fields, then add and import the row to save your fix.`);
+    setImportError(null);
+  }, []);
 
   const validatedRows = useMemo(() => {
     const allRows = [

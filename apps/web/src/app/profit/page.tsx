@@ -12,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
+type ProfitFix = {
+  title: string;
+  detail: string;
+  href: string;
+  buttonLabel: string;
+};
+
 export default function ProfitPage() {
   const [skus, setSkus] = useState<SKU[]>([]);
   const [profits, setProfits] = useState<ProfitResult[]>([]);
@@ -81,6 +88,58 @@ export default function ProfitPage() {
     : isLowMarginWarning
       ? 'warning'
       : 'healthy';
+  const targetMarginPct = 0.08;
+  const selectedFixedCost = selectedSkuRecord ? Number((selectedSkuRecord.cost_myr + selectedShippingCost).toFixed(2)) : 0;
+  const revenueNeededForHealthyMyr = selectedSkuRecord
+    ? Number((selectedFixedCost / (0.9 - targetMarginPct)).toFixed(2))
+    : 0;
+  const targetHealthyPriceIdr = selectedSkuRecord
+    ? Math.ceil(revenueNeededForHealthyMyr * rate)
+    : 0;
+  const priceLiftIdr = selectedSkuRecord ? Math.max(0, targetHealthyPriceIdr - selectedSkuRecord.price_idr) : 0;
+  const maxHealthyCostMyr = selectedSkuRecord
+    ? Number((((0.9 - targetMarginPct) * selectedRevenueMyr) - selectedShippingCost).toFixed(2))
+    : 0;
+  const costReductionMyr = selectedSkuRecord ? Math.max(0, Number((selectedSkuRecord.cost_myr - maxHealthyCostMyr).toFixed(2))) : 0;
+  const maxHealthyShippingMyr = selectedSkuRecord
+    ? Number((((0.9 - targetMarginPct) * selectedRevenueMyr) - selectedSkuRecord.cost_myr).toFixed(2))
+    : 0;
+  const shippingBaseMyr = hasDelayRisk ? 6.5 : 4;
+  const maxHealthyWeightG = selectedSkuRecord
+    ? Math.max(0, Math.floor(((maxHealthyShippingMyr - shippingBaseMyr) / 0.08)))
+    : 0;
+  const weightReductionG = selectedSkuRecord ? Math.max(0, selectedSkuRecord.weight_g - maxHealthyWeightG) : 0;
+  const intakeHref = selectedSkuRecord
+    ? `/intake?sku_id=${encodeURIComponent(selectedSkuRecord.sku_id)}&product_name=${encodeURIComponent(selectedSkuRecord.name)}&category=${encodeURIComponent(selectedSkuRecord.category)}&cost_myr=${encodeURIComponent(String(selectedSkuRecord.cost_myr))}&selling_price_idr=${encodeURIComponent(String(selectedSkuRecord.price_idr))}&weight_g=${encodeURIComponent(String(selectedSkuRecord.weight_g))}&bpom_certified=${encodeURIComponent(selectedSkuRecord.bpom_certified ? "Yes" : "No")}&description=${encodeURIComponent(selectedSkuRecord.description)}`
+    : "/intake";
+  const fixSuggestions: ProfitFix[] = selectedSkuRecord && selectedProfit?.alert
+    ? [
+        {
+          title: priceLiftIdr > 0 ? "Raise price to clear the alert" : "Price is already above the healthy threshold",
+          detail: priceLiftIdr > 0
+            ? `Increase selling price by about ${formatIDR(priceLiftIdr)} so this SKU reaches at least 8.0% margin. Target price: ${formatIDR(targetHealthyPriceIdr)}.`
+            : `Current price already supports a healthy margin. Check cost or routing assumptions instead.`,
+          href: `${intakeHref}${selectedSkuRecord ? `&selling_price_idr=${encodeURIComponent(String(Math.max(selectedSkuRecord.price_idr, targetHealthyPriceIdr)))}` : ""}`,
+          buttonLabel: "Edit price in Data Intake",
+        },
+        {
+          title: costReductionMyr > 0 ? "Lower product cost" : "Product cost is not the main blocker",
+          detail: costReductionMyr > 0
+            ? `Bring unit cost down by about ${formatMYR(costReductionMyr)} or more. Healthy target cost: ${formatMYR(maxHealthyCostMyr)}.`
+            : `Even a zero product cost would not be the cleanest fix here. Price or logistics will move the result more.`,
+          href: intakeHref,
+          buttonLabel: "Edit cost in Data Intake",
+        },
+        {
+          title: weightReductionG > 0 ? "Reduce weight or change fulfilment route" : "Routing is the better fix than packaging weight",
+          detail: weightReductionG > 0
+            ? `Cut about ${weightReductionG}g from fulfilment weight, or switch to a cheaper route. Healthy target weight: ${maxHealthyWeightG}g.`
+            : `This SKU is already too light for packaging tweaks to do much. Open Smart Router to reduce shipping pressure instead.`,
+          href: weightReductionG > 0 ? intakeHref : "/router",
+          buttonLabel: weightReductionG > 0 ? "Edit weight in Data Intake" : "Open Smart Router",
+        },
+      ]
+    : [];
 
   return (
     <div className="space-y-6">
@@ -300,6 +359,25 @@ export default function ProfitPage() {
                     Open Smart Router <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
+              </div>
+            ) : null}
+
+            {fixSuggestions.length > 0 ? (
+              <div className="rounded-lg border border-border bg-muted/40 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">How to fix this</p>
+                <div className="mt-3 space-y-3">
+                  {fixSuggestions.map((fix) => (
+                    <div key={fix.title} className="rounded-lg border border-border bg-background/70 p-4">
+                      <p className="font-semibold">{fix.title}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{fix.detail}</p>
+                      <Link href={fix.href}>
+                        <Button className="mt-3" variant="outline">
+                          {fix.buttonLabel} <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
 
