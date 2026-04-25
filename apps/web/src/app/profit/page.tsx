@@ -361,6 +361,25 @@ export default function ProfitPage() {
                         </Button>
                       </Link>
                     </div>
+
+                    {alternativeAdviceOptions.length > 0 ? (
+                      <div className="space-y-3">
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Other optional solutions</p>
+                        <div className="grid gap-3">
+                          {alternativeAdviceOptions.map((option) => (
+                            <div key={option.option_id} className="rounded-lg border border-white/10 bg-slate-950/60 p-4">
+                              <p className="font-semibold text-white">{option.title}</p>
+                              <p className="mt-2 text-sm text-slate-400 leading-relaxed">{option.detail}</p>
+                              <Link href={option.href} className="mt-4 block">
+                                <Button variant="outline" className="w-full border-white/10 bg-white/5 text-slate-100 hover:bg-white/10">
+                                  {option.button_label} <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                              </Link>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500 italic">Advice unavailable. Try recalculating.</p>

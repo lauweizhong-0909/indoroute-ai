@@ -80,3 +80,11 @@ class ProfitAdviceResponse(BaseModel):
     rationale: str
     source: str
     options: list[ProfitAdviceOption]
+
+
+class ComplianceAdviceResponse(BaseModel):
+    sku_id: str
+    source: str
+    summary: str
+    action_plan: list[str]
+    rewrite_examples: list[str] = []

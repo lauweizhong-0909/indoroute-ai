@@ -1,4 +1,4 @@
-import { ComplianceEvidence, ComplianceReport, CustomsAlert, ProfitAdvice, ProfitResult, RouterDecision, SKU } from "@/types";
+import { ComplianceAdvice, ComplianceEvidence, ComplianceReport, CustomsAlert, ProfitAdvice, ProfitResult, RouterDecision, SKU } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 const DEFAULT_FX_RATE = 3350;
@@ -431,6 +431,15 @@ export async function getProfitAdvice(skuId: string): Promise<ProfitAdvice | nul
     return await fetchJson<ProfitAdvice>(`/api/skus/${encodeURIComponent(skuId)}/profit-advice`);
   } catch (err) {
     console.warn("Profit advice fetch failed.", err);
+    return null;
+  }
+}
+
+export async function getComplianceAdvice(skuId: string): Promise<ComplianceAdvice | null> {
+  try {
+    return await fetchJson<ComplianceAdvice>(`/api/skus/${encodeURIComponent(skuId)}/compliance-advice`);
+  } catch (err) {
+    console.warn("Compliance advice fetch failed.", err);
     return null;
   }
 }

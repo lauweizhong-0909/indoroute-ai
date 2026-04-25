@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getSKUs, getCompliance } from "@/lib/api";
+import { getSKUs, getCompliance, getComplianceAdvice } from "@/lib/api";
 import { buildComplianceGuidance } from "@/lib/complianceGuidance";
-import { SKU, ComplianceReport } from "@/types";
+import { SKU, ComplianceAdvice, ComplianceReport } from "@/types";
 import { ShieldAlert, ShieldCheck, Search, PackageOpen, FileText, Link as LinkIcon, ShieldQuestion } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,6 +22,8 @@ export default function CompliancePage() {
   const [selectedSku, setSelectedSku] = useState<SKU | null>(null);
   const [selectedReport, setSelectedReport] = useState<ComplianceReport | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "evidence" | "action">("overview");
+  const [aiAdvice, setAiAdvice] = useState<ComplianceAdvice | null>(null);
+  const [adviceLoading, setAdviceLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -54,6 +56,31 @@ export default function CompliancePage() {
       ]),
     ).values(),
   );
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAdvice() {
+      if (!selectedSku || !selectedReport) {
+        setAiAdvice(null);
+        setAdviceLoading(false);
+        return;
+      }
+
+      setAdviceLoading(true);
+      const advice = await getComplianceAdvice(selectedSku.sku_id);
+      if (active) {
+        setAiAdvice(advice);
+        setAdviceLoading(false);
+      }
+    }
+
+    loadAdvice();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedSku, selectedReport]);
 
   return (
     <div className="space-y-8 pb-12">
@@ -115,6 +142,7 @@ export default function CompliancePage() {
                         onClick={() => {
                           setSelectedSku(sku);
                           if (report) setSelectedReport(report);
+                          setAiAdvice(null);
                           setActiveTab("overview");
                         }}
                       >
@@ -147,7 +175,16 @@ export default function CompliancePage() {
         </CardContent>
       </Card>
 
-      <Sheet open={!!selectedSku} onOpenChange={(open) => !open && setSelectedSku(null)}>
+      <Sheet
+        open={!!selectedSku}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedSku(null);
+            setSelectedReport(null);
+            setAiAdvice(null);
+          }
+        }}
+      >
         <SheetContent className="!w-screen sm:!w-1/2 !max-w-none overflow-y-auto px-8 bg-[#0f172a]/95 backdrop-blur-2xl border-l border-white/10">
           <SheetHeader className="mb-6">
             <SheetTitle className="text-white font-bold text-2xl">SKU Compliance Profile</SheetTitle>
@@ -169,7 +206,7 @@ export default function CompliancePage() {
                 <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 border-b border-white/10 pb-4">
                   <h4 className={`text-lg font-bold flex items-center gap-2 ${selectedReport.compliant ? 'text-emerald-400' : 'text-red-400'}`}>
                     {selectedReport.compliant ? <ShieldCheck className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
-                    AI Assessment Results
+                    Compliance Assessment
                   </h4>
                   <div className="flex gap-2 flex-wrap bg-black/20 p-1 rounded-full border border-white/5">
                     <Button variant="ghost" size="sm" onClick={() => setActiveTab("overview")} className={`rounded-full px-4 h-8 text-xs font-bold transition-all ${activeTab === 'overview' ? 'bg-white/15 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Overview</Button>
@@ -180,6 +217,15 @@ export default function CompliancePage() {
                 
                 {activeTab === 'overview' && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="border-white/10 bg-black/20 text-slate-200">
+                        Rule evidence
+                      </Badge>
+                      <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-200">
+                        AI interpretation
+                      </Badge>
+                    </div>
+
                     {!selectedReport.compliant && (
                       <div className="bg-red-950/40 p-4 rounded-lg border border-red-500/20">
                         <h5 className="text-xs font-bold text-red-400 uppercase tracking-widest mb-3">Red Flags Found</h5>
@@ -276,8 +322,46 @@ export default function CompliancePage() {
 
                 {activeTab === 'action' && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div>
-                      <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Required Action</h5>
+                    <div className="rounded-lg border border-blue-500/20 bg-blue-950/20 p-4">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <h5 className="text-xs font-bold uppercase tracking-widest text-slate-300">
+                          {aiAdvice?.source === "ai" ? "AI Action Plan" : "Recommended Action Plan"}
+                        </h5>
+                        <Badge variant="outline" className={aiAdvice?.source === "ai" ? "border-blue-500/30 bg-blue-500/10 text-blue-200" : "border-slate-500/30 bg-slate-500/10 text-slate-300"}>
+                          {aiAdvice?.source === "ai" ? "AI engine" : "Fallback"}
+                        </Badge>
+                      </div>
+                      {adviceLoading ? (
+                        <div className="space-y-3">
+                          <Skeleton className="h-16 w-full bg-slate-800/50" />
+                          <Skeleton className="h-24 w-full bg-slate-800/50" />
+                        </div>
+                      ) : aiAdvice ? (
+                        <>
+                          <p className="mb-4 text-sm text-slate-200 leading-relaxed">{aiAdvice.summary}</p>
+                          <ul className="list-disc pl-5 space-y-2 text-sm leading-relaxed text-blue-100">
+                            {aiAdvice.action_plan.map((step, i) => (
+                              <li key={i}>{step}</li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : (
+                        <p className="text-sm text-slate-300">
+                          AI advice is unavailable right now. The rule guardrails below are still safe to follow.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <h5 className="text-xs font-bold uppercase tracking-widest text-slate-400">Rule Guardrails</h5>
+                        <Badge variant="outline" className="border-white/10 bg-background/30 text-slate-300">
+                          Must fix
+                        </Badge>
+                      </div>
+                      <p className="mb-4 text-sm text-slate-400">
+                        These deterministic steps come from BPOM status and matched restricted claims, so they remain the safety baseline even when AI suggestions vary.
+                      </p>
                       {guidance?.fixSteps && guidance.fixSteps.length > 0 ? (
                         <ul className="list-disc pl-5 space-y-2 text-sm leading-relaxed text-slate-300">
                           {guidance.fixSteps.map((step, i) => (
@@ -289,16 +373,34 @@ export default function CompliancePage() {
                       )}
                     </div>
 
-                    {guidance?.replacementExamples && guidance.replacementExamples.length > 0 ? (
-                      <div>
-                        <h5 className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">AI Suggested Copy</h5>
+                    <div className="rounded-lg border border-blue-500/20 bg-blue-950/20 p-4">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <h5 className="text-xs font-bold uppercase tracking-widest text-slate-300">Suggested Listing Copy</h5>
+                        <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-200">
+                          Optional
+                        </Badge>
+                      </div>
+                      <p className="mb-4 text-sm text-slate-300/80">
+                        These rewrite examples help you edit the listing faster. They are not the compliance decision itself.
+                      </p>
+                      {aiAdvice?.rewrite_examples && aiAdvice.rewrite_examples.length > 0 ? (
+                        <ul className="list-disc pl-5 space-y-2 text-sm leading-relaxed text-blue-300 font-mono bg-blue-950/20 p-3 rounded-lg border border-blue-500/20">
+                          {aiAdvice.rewrite_examples.map((example, i) => (
+                            <li key={i}>{example}</li>
+                          ))}
+                        </ul>
+                      ) : guidance?.replacementExamples && guidance.replacementExamples.length > 0 ? (
                         <ul className="list-disc pl-5 space-y-2 text-sm leading-relaxed text-blue-300 font-mono bg-blue-950/20 p-3 rounded-lg border border-blue-500/20">
                           {guidance.replacementExamples.map((example, i) => (
                             <li key={i}>{example}</li>
                           ))}
                         </ul>
-                      </div>
-                    ) : null}
+                      ) : (
+                        <p className="text-sm text-slate-300">
+                          No direct rewrite examples are available for the matched wording yet, but the rule-based action plan above is still the required fix.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

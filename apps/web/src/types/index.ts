@@ -34,6 +34,14 @@ export interface ComplianceReport {
   evidence?: ComplianceEvidence[];
 }
 
+export interface ComplianceAdvice {
+  sku_id: string;
+  source: string;
+  summary: string;
+  action_plan: string[];
+  rewrite_examples: string[];
+}
+
 export interface ProfitResult {
   sku_id: string;
   net_profit_myr: number;

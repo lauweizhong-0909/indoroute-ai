@@ -61,7 +61,7 @@ class IlmuAIClient:
         if response_format:
             payload["response_format"] = response_format
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(trust_env=False) as client:
             try:
                 response = await client.post(
                     self.base_url, 

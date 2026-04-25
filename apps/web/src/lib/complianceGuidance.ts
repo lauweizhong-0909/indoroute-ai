@@ -14,10 +14,25 @@ const CLAIM_REPLACEMENTS: Record<string, string[]> = {
     "professional-use cosmetic peel",
     "resurfacing skincare formula",
   ],
+  whitening: [
+    "brightening skincare",
+    "radiance-focused night cream",
+    "tone-evening cosmetic formula",
+  ],
+  brightening: [
+    "radiance-supporting",
+    "tone-evening",
+    "appearance-enhancing",
+  ],
   "fast whiten": [
     "brightening effect",
     "radiance-enhancing result",
     "helps improve skin appearance",
+  ],
+  treatment: [
+    "cosmetic care",
+    "targeted skincare support",
+    "daily-use skincare formula",
   ],
   cure: [
     "helps soothe the look of skin",

@@ -27,7 +27,7 @@ async def analyze_product_risk(sku_id: str, db: Session):
     """
 
     # 3. Call Ilmu AI API
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(trust_env=False) as client:
         try:
             response = await client.post(
                 BASE_URL, 
