@@ -36,6 +36,26 @@ type ValidatedRow = {
   isValid: boolean;
 };
 
+type ImportPayloadRow = {
+  sku_id: string;
+  product_name: string;
+  category: string;
+  hs_code?: string;
+  cost_myr: number;
+  selling_price_idr: number;
+  weight_g: number;
+  bpom_certified: string;
+  description: string;
+  balanced_qty?: number;
+  qty_sold?: number;
+};
+
+type ImportedSkuRecord = {
+  sku_id?: string;
+  name?: string;
+  product_name?: string;
+};
+
 const CSV_COLUMNS: Array<keyof IntakeRow> = [
   "sku_id",
   "product_name",
@@ -263,11 +283,15 @@ function toCsv(rows: IntakeRow[]): string {
 }
 
 export default function IntakePage() {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
   const [uploadedRows, setUploadedRows] = useState<IntakeRow[]>([]);
   const [manualRows, setManualRows] = useState<IntakeRow[]>([]);
   const [draft, setDraft] = useState<IntakeRow>(EMPTY_ROW);
   const [lastFileName, setLastFileName] = useState("");
   const [fileErrors, setFileErrors] = useState<string[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
 
   const validatedRows = useMemo(() => {
     const allRows = [
@@ -289,6 +313,27 @@ export default function IntakePage() {
     };
   }, [validatedRows]);
 
+  const hasLoadedRows = validatedRows.length > 0;
+  const hasValidRows = stats.valid > 0;
+  const hasInvalidRows = stats.invalid > 0;
+
+  const prepareRowsForImport = (rows: ValidatedRow[]): ImportPayloadRow[] =>
+    rows
+      .filter((row) => row.isValid)
+      .map((row) => ({
+        sku_id: row.values.sku_id,
+        product_name: row.values.product_name,
+        category: row.values.category,
+        hs_code: row.values.hs_code || undefined,
+        cost_myr: Number(row.values.cost_myr),
+        selling_price_idr: Number(row.values.selling_price_idr),
+        weight_g: Number(row.values.weight_g),
+        bpom_certified: row.values.bpom_certified,
+        description: row.values.description,
+        balanced_qty: row.values.balanced_qty ? Number(row.values.balanced_qty) : undefined,
+        qty_sold: row.values.qty_sold ? Number(row.values.qty_sold) : undefined,
+      }));
+
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -308,6 +353,8 @@ export default function IntakePage() {
     setUploadedRows(rows);
     setLastFileName(file.name);
     setFileErrors([]);
+    setImportMessage(null);
+    setImportError(null);
     event.target.value = "";
   };
 
@@ -318,6 +365,68 @@ export default function IntakePage() {
   const handleAddManualRow = () => {
     setManualRows((current) => [...current, normalizeRow(draft)]);
     setDraft(EMPTY_ROW);
+    setImportMessage(null);
+    setImportError(null);
+  };
+
+  const handleImportValidRows = async () => {
+    const rowsToImport = prepareRowsForImport(validatedRows);
+
+    if (rowsToImport.length === 0) {
+      setImportError("There are no valid rows to import yet.");
+      setImportMessage(null);
+      return;
+    }
+
+    setIsImporting(true);
+    setImportError(null);
+    setImportMessage(null);
+
+    try {
+      const response = await fetch(`${apiUrl}/api/skus/import`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ rows: rowsToImport }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Import failed with status ${response.status}`);
+      }
+
+      const result = (await response.json()) as {
+        imported_count: number;
+        created_count: number;
+        updated_count: number;
+      };
+
+      const verifyResponse = await fetch(`${apiUrl}/api/skus/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!verifyResponse.ok) {
+        throw new Error(`Import finished, but verification failed with status ${verifyResponse.status}`);
+      }
+
+      const importedSkuIds = new Set(rowsToImport.map((row) => row.sku_id));
+      const storedRows = (await verifyResponse.json()) as ImportedSkuRecord[];
+      const confirmedCount = storedRows.filter((row) => row.sku_id && importedSkuIds.has(row.sku_id)).length;
+
+      setImportMessage(
+        confirmedCount === rowsToImport.length
+          ? `Confirmed in database: ${confirmedCount} row${confirmedCount === 1 ? "" : "s"} found after import (${result.created_count} created, ${result.updated_count} updated).`
+          : `Import request finished, but only ${confirmedCount} of ${rowsToImport.length} row${rowsToImport.length === 1 ? "" : "s"} could be confirmed from the database.`,
+      );
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : "Import failed.");
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const handleDownloadPreparedCsv = () => {
@@ -341,6 +450,8 @@ export default function IntakePage() {
     setDraft(EMPTY_ROW);
     setLastFileName("");
     setFileErrors([]);
+    setImportMessage(null);
+    setImportError(null);
   };
 
   return (
@@ -394,9 +505,9 @@ export default function IntakePage() {
               <p className="mt-4 font-medium">Optional columns</p>
               <p className="mt-2 font-mono text-xs sm:text-sm">{OPTIONAL_COLUMNS.join(", ")}</p>
             </div>
-            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4 text-sm leading-relaxed text-blue-950">
-              <p className="font-medium">Input rules</p>
-              <ul className="mt-2 space-y-1 text-sm">
+            <div className="rounded-lg border border-sky-400/30 bg-sky-500/12 p-4 text-sm leading-relaxed text-sky-100">
+              <p className="font-semibold text-sky-50">Input rules</p>
+              <ul className="mt-2 space-y-1 text-sm text-sky-100">
                 <li>`bpom_certified` must be `Yes` or `No`</li>
                 <li>`cost_myr` and `selling_price_idr` must be numbers</li>
                 <li>`weight_g` must be a whole number greater than 0</li>
@@ -429,6 +540,26 @@ export default function IntakePage() {
                   <p key={error}>{error}</p>
                 ))}
               </div>
+            ) : null}
+            {hasLoadedRows ? (
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-50">
+                <p className="font-semibold text-emerald-100">After upload</p>
+                <p className="mt-2 text-emerald-50/90">
+                  Your CSV is parsed locally and shown in <span className="font-semibold">Prepared Rows</span> below.
+                  Once the rows look good, you can import the valid ones directly into the backend.
+                </p>
+                <p className="mt-2 text-emerald-50/90">
+                  {hasInvalidRows
+                    ? `Fix the rows marked "Needs fix", then import or export the ${stats.valid} valid row${stats.valid === 1 ? "" : "s"}.`
+                    : `All ${stats.valid} row${stats.valid === 1 ? "" : "s"} are valid. You can import them now.`}
+                </p>
+              </div>
+            ) : null}
+            {importMessage ? (
+              <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-700">{importMessage}</div>
+            ) : null}
+            {importError ? (
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-700">{importError}</div>
             ) : null}
           </CardContent>
         </Card>
@@ -495,6 +626,9 @@ export default function IntakePage() {
               <Button onClick={handleAddManualRow} className="bg-blue-600 hover:bg-blue-700">
                 Add test SKU
               </Button>
+              <Button onClick={handleImportValidRows} disabled={!hasValidRows || isImporting}>
+                <Upload className="mr-2 h-4 w-4" /> {isImporting ? "Importing..." : "Import valid rows"}
+              </Button>
               <Button variant="outline" onClick={handleDownloadPreparedCsv} disabled={validatedRows.length === 0}>
                 <Download className="mr-2 h-4 w-4" /> Export valid rows
               </Button>
@@ -507,7 +641,7 @@ export default function IntakePage() {
         <CardHeader>
           <CardTitle>Prepared Rows</CardTitle>
           <CardDescription>
-            Review the parsed rows before you wire them into a backend import flow. Invalid rows are highlighted and excluded from export.
+            Review the parsed rows after upload. Invalid rows are highlighted and excluded from export, and valid rows can be downloaded as a clean CSV.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -516,66 +650,77 @@ export default function IntakePage() {
               No rows loaded yet. Download the sample CSV or add one SKU manually.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Source</TableHead>
-                  <TableHead>SKU ID</TableHead>
-                  <TableHead>Product Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Cost</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Weight</TableHead>
-                  <TableHead>BPOM</TableHead>
-                  <TableHead>Validation</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {validatedRows.map((row) => (
-                  <TableRow key={row.id} className={row.isValid ? "" : "bg-red-500/5"}>
-                    <TableCell>
-                      {row.isValid ? (
-                        <Badge className="bg-green-500/15 text-green-700 hover:bg-green-500/15">
-                          <CheckCircle2 className="mr-1 h-3 w-3" /> Valid
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive">
-                          <AlertCircle className="mr-1 h-3 w-3" /> Needs fix
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{row.source === "csv" ? `CSV row ${row.rowNumber}` : `Manual ${row.rowNumber}`}</Badge>
-                    </TableCell>
-                    <TableCell className="font-mono">{row.values.sku_id || "-"}</TableCell>
-                    <TableCell>{row.values.product_name || "-"}</TableCell>
-                    <TableCell>{row.values.category || "-"}</TableCell>
-                    <TableCell>{row.values.cost_myr || "-"}</TableCell>
-                    <TableCell>{row.values.selling_price_idr || "-"}</TableCell>
-                    <TableCell>{row.values.weight_g || "-"}</TableCell>
-                    <TableCell>{row.values.bpom_certified || "Not provided"}</TableCell>
-                    <TableCell className="max-w-sm align-top">
-                      <div className="space-y-2 text-sm">
-                        {row.errors.map((error) => (
-                          <p key={error} className="text-red-700">
-                            {error}
-                          </p>
-                        ))}
-                        {row.warnings.map((warning) => (
-                          <p key={warning} className="text-amber-700">
-                            {warning}
-                          </p>
-                        ))}
-                        {row.errors.length === 0 && row.warnings.length === 0 ? (
-                          <p className="text-green-700">Ready for import.</p>
-                        ) : null}
-                      </div>
-                    </TableCell>
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                {hasValidRows ? (
+                  <p>
+                    Next step: click <span className="font-semibold text-foreground">Import valid rows</span> to send clean rows into the backend, or export them as CSV if you need a file.
+                  </p>
+                ) : (
+                  <p>Next step: fix the rows marked below before exporting.</p>
+                )}
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead>SKU ID</TableHead>
+                    <TableHead>Product Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Cost</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Weight</TableHead>
+                    <TableHead>BPOM</TableHead>
+                    <TableHead>Validation</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {validatedRows.map((row) => (
+                    <TableRow key={row.id} className={row.isValid ? "" : "bg-red-500/5"}>
+                      <TableCell>
+                        {row.isValid ? (
+                          <Badge className="bg-green-500/15 text-green-700 hover:bg-green-500/15">
+                            <CheckCircle2 className="mr-1 h-3 w-3" /> Valid
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive">
+                            <AlertCircle className="mr-1 h-3 w-3" /> Needs fix
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{row.source === "csv" ? `CSV row ${row.rowNumber}` : `Manual ${row.rowNumber}`}</Badge>
+                      </TableCell>
+                      <TableCell className="font-mono">{row.values.sku_id || "-"}</TableCell>
+                      <TableCell>{row.values.product_name || "-"}</TableCell>
+                      <TableCell>{row.values.category || "-"}</TableCell>
+                      <TableCell>{row.values.cost_myr || "-"}</TableCell>
+                      <TableCell>{row.values.selling_price_idr || "-"}</TableCell>
+                      <TableCell>{row.values.weight_g || "-"}</TableCell>
+                      <TableCell>{row.values.bpom_certified || "Not provided"}</TableCell>
+                      <TableCell className="max-w-sm align-top">
+                        <div className="space-y-2 text-sm">
+                          {row.errors.map((error) => (
+                            <p key={error} className="text-red-700">
+                              {error}
+                            </p>
+                          ))}
+                          {row.warnings.map((warning) => (
+                            <p key={warning} className="text-amber-700">
+                              {warning}
+                            </p>
+                          ))}
+                          {row.errors.length === 0 && row.warnings.length === 0 ? (
+                            <p className="text-green-700">Ready for import.</p>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

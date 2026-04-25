@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getFxRate, getSKUs, getProfits, getRouterDecisions } from "@/lib/api";
+import { deriveProfitsFromInputs, deriveRouterDecisionsFromInputs, getCustomsAlerts, getFxRate, getSKUs } from "@/lib/api";
 import { SKU, ProfitResult, RouterDecision } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,22 +24,33 @@ export default function ProfitPage() {
 
   useEffect(() => {
     async function load() {
-      const [_skus, _profits, _routerDecisions, _rate] = await Promise.all([getSKUs(), getProfits(), getRouterDecisions(), getFxRate()]);
-      setSkus(_skus);
-      setProfits(_profits);
-      setRouterDecision(_routerDecisions[0] ?? null);
-      setRate(_rate);
-      setLoading(false);
+      try {
+        const [_skus, _alerts, _rate] = await Promise.all([getSKUs(), getCustomsAlerts(), getFxRate()]);
+        const derivedProfits = deriveProfitsFromInputs(_skus, _alerts, _rate);
+        const derivedRouterDecisions = deriveRouterDecisionsFromInputs(_skus, _alerts, _rate);
+
+        setSkus(_skus);
+        setProfits(derivedProfits);
+        setRouterDecision(derivedRouterDecisions[0] ?? null);
+        setRate(_rate);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
 
   const handleRecalculate = async () => {
     setRecalculating(true);
-    const [_profits, _rate] = await Promise.all([getProfits(), getFxRate()]);
-    setRate(_rate);
-    setProfits(_profits);
-    setRecalculating(false);
+    try {
+      const [_skus, _alerts, _rate] = await Promise.all([getSKUs(), getCustomsAlerts(), getFxRate()]);
+      setSkus(_skus);
+      setRate(_rate);
+      setProfits(deriveProfitsFromInputs(_skus, _alerts, _rate));
+      setRouterDecision(deriveRouterDecisionsFromInputs(_skus, _alerts, _rate)[0] ?? null);
+    } finally {
+      setRecalculating(false);
+    }
   };
 
   const formatIDR = (idr: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(idr);

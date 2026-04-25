@@ -137,7 +137,7 @@ function dutyCostFor(revenueMyr: number): number {
   return Number((revenueMyr * 0.1).toFixed(2));
 }
 
-function deriveProfitResult(sku: SKU, hasDelayRisk: boolean, fxRate: number): ProfitResult {
+export function deriveProfitResult(sku: SKU, hasDelayRisk: boolean, fxRate: number): ProfitResult {
   const revenueMyr = sku.price_idr / fxRate;
   const duty = dutyCostFor(revenueMyr);
   const shipping = shippingCostFor(sku.weight_g, hasDelayRisk);
@@ -199,7 +199,7 @@ function normalizeAlert(raw: RawAlert): CustomsAlert {
   };
 }
 
-function deriveRouterDecisions(skus: SKU[], profits: ProfitResult[], compliance: ComplianceReport[], alerts: CustomsAlert[]): RouterDecision[] {
+export function deriveRouterDecisions(skus: SKU[], profits: ProfitResult[], compliance: ComplianceReport[], alerts: CustomsAlert[]): RouterDecision[] {
   const decisions: RouterDecision[] = [];
   const activeInspection = alerts.find((alert) => alert.is_active && /inspection|lampu merah/i.test(`${alert.title} ${alert.body}`));
   const lossMaking = profits.filter((profit) => profit.net_profit_myr < 0).map((profit) => profit.sku_id);
@@ -304,14 +304,21 @@ export async function getCompliance(): Promise<ComplianceReport[]> {
 
 export async function getProfits(): Promise<ProfitResult[]> {
   const [skus, alerts, fxRate] = await Promise.all([getSKUs(), getCustomsAlerts(), getFxRate()]);
-  const hasDelayRisk = alerts.some((alert) => alert.is_active && /inspection|delay|lampu merah/i.test(`${alert.title} ${alert.body}`));
-  return skus.map((sku) => deriveProfitResult(sku, hasDelayRisk, fxRate));
+  return deriveProfitsFromInputs(skus, alerts, fxRate);
 }
 
 export async function getRouterDecisions(): Promise<RouterDecision[]> {
   const [skus, alerts, fxRate] = await Promise.all([getSKUs(), getCustomsAlerts(), getFxRate()]);
+  return deriveRouterDecisionsFromInputs(skus, alerts, fxRate);
+}
+
+export function deriveProfitsFromInputs(skus: SKU[], alerts: CustomsAlert[], fxRate: number): ProfitResult[] {
   const hasDelayRisk = alerts.some((alert) => alert.is_active && /inspection|delay|lampu merah/i.test(`${alert.title} ${alert.body}`));
-  const profits = skus.map((sku) => deriveProfitResult(sku, hasDelayRisk, fxRate));
+  return skus.map((sku) => deriveProfitResult(sku, hasDelayRisk, fxRate));
+}
+
+export function deriveRouterDecisionsFromInputs(skus: SKU[], alerts: CustomsAlert[], fxRate: number): RouterDecision[] {
+  const profits = deriveProfitsFromInputs(skus, alerts, fxRate);
   const compliance = skus.map(deriveComplianceReport);
   return deriveRouterDecisions(skus, profits, compliance, alerts);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getSKUs, getRouterDecisions, getCustomsAlerts, getProfits } from "@/lib/api";
+import { deriveProfitsFromInputs, deriveRouterDecisionsFromInputs, getCustomsAlerts, getFxRate, getSKUs } from "@/lib/api";
 import { SKU, RouterDecision, CustomsAlert, ProfitResult } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,14 +20,18 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
-      const [_skus, _decisions, _alerts, _profits] = await Promise.all([
-        getSKUs(), getRouterDecisions(), getCustomsAlerts(), getProfits()
-      ]);
-      setSkus(_skus);
-      setDecisions(_decisions.filter(d => d.priority === "URGENT"));
-      setAlerts(_alerts.filter(a => a.is_active));
-      setProfits(_profits.filter((profit) => profit.alert));
-      setLoading(false);
+      try {
+        const [_skus, _alerts, _rate] = await Promise.all([getSKUs(), getCustomsAlerts(), getFxRate()]);
+        const derivedProfits = deriveProfitsFromInputs(_skus, _alerts, _rate);
+        const derivedDecisions = deriveRouterDecisionsFromInputs(_skus, _alerts, _rate);
+
+        setSkus(_skus);
+        setDecisions(derivedDecisions.filter(d => d.priority === "URGENT"));
+        setAlerts(_alerts.filter(a => a.is_active));
+        setProfits(derivedProfits.filter((profit) => profit.alert));
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);

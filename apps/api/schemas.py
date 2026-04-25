@@ -15,6 +15,28 @@ class SKUResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class SKUImportRow(BaseModel):
+    sku_id: str
+    product_name: str
+    category: str
+    hs_code: Optional[str] = None
+    cost_myr: float
+    selling_price_idr: float
+    weight_g: int
+    bpom_certified: str
+    description: str
+    balanced_qty: Optional[int] = None
+    qty_sold: Optional[int] = None
+
+class SKUImportRequest(BaseModel):
+    rows: list[SKUImportRow]
+
+class SKUImportResponse(BaseModel):
+    imported_count: int
+    created_count: int
+    updated_count: int
+    skipped_count: int = 0
+
 # Alert Schemas
 class AlertIngestRequest(BaseModel):
     news_text: str
