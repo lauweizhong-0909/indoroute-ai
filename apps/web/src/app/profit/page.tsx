@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { deriveProfitsFromInputs, deriveRouterDecisionsFromInputs, getCustomsAlerts, getFxRate, getSKUs } from "@/lib/api";
-import { SKU, ProfitResult, RouterDecision, CustomsAlert } from "@/types";
+import { deriveProfitsFromInputs, deriveRouterDecisionsFromInputs, getCustomsAlerts, getFxRate, getProfitAdvice, getSKUs } from "@/lib/api";
+import { SKU, ProfitResult, RouterDecision, CustomsAlert, ProfitAdvice } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -11,13 +11,6 @@ import { Info, AlertTriangle, Calculator, RefreshCw, ArrowRight } from 'lucide-r
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-
-type ProfitFix = {
-  title: string;
-  detail: string;
-  href: string;
-  buttonLabel: string;
-};
 
 export default function ProfitPage() {
   const [skus, setSkus] = useState<SKU[]>([]);
@@ -29,6 +22,8 @@ export default function ProfitPage() {
   const [rate, setRate] = useState(3350.0);
   
   const [selectedProfit, setSelectedProfit] = useState<ProfitResult | null>(null);
+  const [profitAdvice, setProfitAdvice] = useState<ProfitAdvice | null>(null);
+  const [adviceLoading, setAdviceLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -48,6 +43,31 @@ export default function ProfitPage() {
     }
     load();
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAdvice() {
+      if (!selectedProfit?.alert) {
+        setProfitAdvice(null);
+        setAdviceLoading(false);
+        return;
+      }
+
+      setAdviceLoading(true);
+      const advice = await getProfitAdvice(selectedProfit.sku_id);
+      if (active) {
+        setProfitAdvice(advice);
+        setAdviceLoading(false);
+      }
+    }
+
+    loadAdvice();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedProfit]);
 
   const handleRecalculate = async () => {
     setRecalculating(true);
@@ -88,58 +108,9 @@ export default function ProfitPage() {
     : isLowMarginWarning
       ? 'warning'
       : 'healthy';
-  const targetMarginPct = 0.08;
-  const selectedFixedCost = selectedSkuRecord ? Number((selectedSkuRecord.cost_myr + selectedShippingCost).toFixed(2)) : 0;
-  const revenueNeededForHealthyMyr = selectedSkuRecord
-    ? Number((selectedFixedCost / (0.9 - targetMarginPct)).toFixed(2))
-    : 0;
-  const targetHealthyPriceIdr = selectedSkuRecord
-    ? Math.ceil(revenueNeededForHealthyMyr * rate)
-    : 0;
-  const priceLiftIdr = selectedSkuRecord ? Math.max(0, targetHealthyPriceIdr - selectedSkuRecord.price_idr) : 0;
-  const maxHealthyCostMyr = selectedSkuRecord
-    ? Number((((0.9 - targetMarginPct) * selectedRevenueMyr) - selectedShippingCost).toFixed(2))
-    : 0;
-  const costReductionMyr = selectedSkuRecord ? Math.max(0, Number((selectedSkuRecord.cost_myr - maxHealthyCostMyr).toFixed(2))) : 0;
-  const maxHealthyShippingMyr = selectedSkuRecord
-    ? Number((((0.9 - targetMarginPct) * selectedRevenueMyr) - selectedSkuRecord.cost_myr).toFixed(2))
-    : 0;
-  const shippingBaseMyr = hasDelayRisk ? 6.5 : 4;
-  const maxHealthyWeightG = selectedSkuRecord
-    ? Math.max(0, Math.floor(((maxHealthyShippingMyr - shippingBaseMyr) / 0.08)))
-    : 0;
-  const weightReductionG = selectedSkuRecord ? Math.max(0, selectedSkuRecord.weight_g - maxHealthyWeightG) : 0;
-  const intakeHref = selectedSkuRecord
-    ? `/intake?sku_id=${encodeURIComponent(selectedSkuRecord.sku_id)}&product_name=${encodeURIComponent(selectedSkuRecord.name)}&category=${encodeURIComponent(selectedSkuRecord.category)}&cost_myr=${encodeURIComponent(String(selectedSkuRecord.cost_myr))}&selling_price_idr=${encodeURIComponent(String(selectedSkuRecord.price_idr))}&weight_g=${encodeURIComponent(String(selectedSkuRecord.weight_g))}&bpom_certified=${encodeURIComponent(selectedSkuRecord.bpom_certified ? "Yes" : "No")}&description=${encodeURIComponent(selectedSkuRecord.description)}`
-    : "/intake";
-  const fixSuggestions: ProfitFix[] = selectedSkuRecord && selectedProfit?.alert
-    ? [
-        {
-          title: priceLiftIdr > 0 ? "Raise price to clear the alert" : "Price is already above the healthy threshold",
-          detail: priceLiftIdr > 0
-            ? `Increase selling price by about ${formatIDR(priceLiftIdr)} so this SKU reaches at least 8.0% margin. Target price: ${formatIDR(targetHealthyPriceIdr)}.`
-            : `Current price already supports a healthy margin. Check cost or routing assumptions instead.`,
-          href: `${intakeHref}${selectedSkuRecord ? `&selling_price_idr=${encodeURIComponent(String(Math.max(selectedSkuRecord.price_idr, targetHealthyPriceIdr)))}` : ""}`,
-          buttonLabel: "Edit price in Data Intake",
-        },
-        {
-          title: costReductionMyr > 0 ? "Lower product cost" : "Product cost is not the main blocker",
-          detail: costReductionMyr > 0
-            ? `Bring unit cost down by about ${formatMYR(costReductionMyr)} or more. Healthy target cost: ${formatMYR(maxHealthyCostMyr)}.`
-            : `Even a zero product cost would not be the cleanest fix here. Price or logistics will move the result more.`,
-          href: intakeHref,
-          buttonLabel: "Edit cost in Data Intake",
-        },
-        {
-          title: weightReductionG > 0 ? "Reduce weight or change fulfilment route" : "Routing is the better fix than packaging weight",
-          detail: weightReductionG > 0
-            ? `Cut about ${weightReductionG}g from fulfilment weight, or switch to a cheaper route. Healthy target weight: ${maxHealthyWeightG}g.`
-            : `This SKU is already too light for packaging tweaks to do much. Open Smart Router to reduce shipping pressure instead.`,
-          href: weightReductionG > 0 ? intakeHref : "/router",
-          buttonLabel: weightReductionG > 0 ? "Edit weight in Data Intake" : "Open Smart Router",
-        },
-      ]
-    : [];
+  const bestAdviceOption = profitAdvice?.options.find((option) => option.option_id === profitAdvice.best_option_id) ?? null;
+  const alternativeAdviceOptions = profitAdvice?.options.filter((option) => option.option_id !== profitAdvice.best_option_id) ?? [];
+  const adviceSourceLabel = profitAdvice?.source === "ai" ? "AI recommendation" : "Best available recommendation";
 
   return (
     <div className="space-y-6">
@@ -148,17 +119,9 @@ export default function ProfitPage() {
           <h1 className="text-3xl font-bold tracking-tight">Profit Shield</h1>
           <p className="text-muted-foreground mt-1">See which SKUs are making money and which are not.</p>
         </div>
-        <Card className="bg-slate-900 text-white border-0 shadow-md">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div>
-              <p className="text-xs text-slate-400">Live Rate (IDR/MYR)</p>
-              <p className="font-mono text-xl">{rate.toFixed(2)}</p>
-            </div>
-            <Button onClick={handleRecalculate} disabled={recalculating} size="icon" variant="ghost" className="text-slate-300 hover:text-white hover:bg-slate-800">
+        <Button onClick={handleRecalculate} disabled={recalculating} size="icon" variant="outline">
               <RefreshCw className={`h-5 w-5 ${recalculating ? 'animate-spin' : ''}`} />
-            </Button>
-          </CardContent>
-        </Card>
+        </Button>
       </div>
 
       {loading ? (
@@ -347,37 +310,56 @@ export default function ProfitPage() {
               </div>
             </div>
 
-            {selectedProfit?.alert && routerDecision ? (
-              <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Next action</p>
-                <ul className="mt-2 list-disc pl-5 text-sm text-blue-900 leading-relaxed space-y-1">
-                  <li>{routerDecision.action}</li>
-                  <li>{routerDecision.trigger_summary}</li>
-                </ul>
-                <Link href="/router">
-                  <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
-                    Open Smart Router <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            ) : null}
-
-            {fixSuggestions.length > 0 ? (
+            {selectedProfit?.alert ? (
               <div className="rounded-lg border border-border bg-muted/40 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">How to fix this</p>
-                <div className="mt-3 space-y-3">
-                  {fixSuggestions.map((fix) => (
-                    <div key={fix.title} className="rounded-lg border border-border bg-background/70 p-4">
-                      <p className="font-semibold">{fix.title}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{fix.detail}</p>
-                      <Link href={fix.href}>
-                        <Button className="mt-3" variant="outline">
-                          {fix.buttonLabel} <ArrowRight className="ml-2 h-4 w-4" />
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Best solution</p>
+                {adviceLoading ? (
+                  <div className="mt-3 space-y-3">
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                  </div>
+                ) : bestAdviceOption && profitAdvice ? (
+                  <div className="mt-3 space-y-3">
+                    <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-blue-100">{profitAdvice.headline}</p>
+                          <p className="mt-1 text-xs uppercase tracking-wide text-blue-300">
+                            {adviceSourceLabel}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="border-blue-400/40 bg-blue-400/10 text-blue-200">Recommended</Badge>
+                      </div>
+                      <p className="mt-3 font-semibold text-slate-50">{bestAdviceOption.title}</p>
+                      <p className="mt-1 text-sm text-slate-200">{bestAdviceOption.detail}</p>
+                      <p className="mt-3 text-sm text-slate-300">{profitAdvice.rationale}</p>
+                      <Link href={bestAdviceOption.href}>
+                        <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+                          {bestAdviceOption.button_label} <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </Link>
                     </div>
-                  ))}
-                </div>
+
+                    {alternativeAdviceOptions.length > 0 ? (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Other options</p>
+                        {alternativeAdviceOptions.map((option) => (
+                          <div key={option.option_id} className="rounded-lg border border-border bg-background/70 p-4">
+                            <p className="font-semibold">{option.title}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">{option.detail}</p>
+                            <Link href={option.href}>
+                              <Button className="mt-3" variant="outline">
+                                {option.button_label} <ArrowRight className="ml-2 h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">Advice is not available right now. Try recalculating, or open Smart Router for a manual route decision.</p>
+                )}
               </div>
             ) : null}
 

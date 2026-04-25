@@ -49,3 +49,20 @@ class AlertResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ProfitAdviceOption(BaseModel):
+    option_id: str
+    title: str
+    detail: str
+    button_label: str
+    href: str
+
+
+class ProfitAdviceResponse(BaseModel):
+    sku_id: str
+    best_option_id: str
+    headline: str
+    rationale: str
+    source: str
+    options: list[ProfitAdviceOption]

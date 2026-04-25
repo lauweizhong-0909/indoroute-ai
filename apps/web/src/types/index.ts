@@ -52,3 +52,20 @@ export interface CustomsAlert {
   next_action?: string;
   triggered_modules?: string[];
 }
+
+export interface ProfitAdviceOption {
+  option_id: string;
+  title: string;
+  detail: string;
+  button_label: string;
+  href: string;
+}
+
+export interface ProfitAdvice {
+  sku_id: string;
+  best_option_id: string;
+  headline: string;
+  rationale: string;
+  source: string;
+  options: ProfitAdviceOption[];
+}

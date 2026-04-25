@@ -8,15 +8,20 @@ export default function Header() {
 
   useEffect(() => {
     let active = true;
+    const refreshRate = () => {
+      getFxRate().then((liveRate) => {
+        if (active) {
+          setRate(liveRate);
+        }
+      });
+    };
 
-    getFxRate().then((liveRate) => {
-      if (active) {
-        setRate(liveRate);
-      }
-    });
+    refreshRate();
+    const intervalId = window.setInterval(refreshRate, 2000);
 
     return () => {
       active = false;
+      window.clearInterval(intervalId);
     };
   }, []);
 
@@ -27,7 +32,7 @@ export default function Header() {
       </div>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-slate-500">Live Rate (MYR/IDR):</span>
+          <span className="text-slate-500">Live Rate (IDR/MYR):</span>
           <span className="font-mono font-medium rounded bg-muted px-2 py-1">{rate.toFixed(2)}</span>
         </div>
         <div className="flex items-center gap-2">

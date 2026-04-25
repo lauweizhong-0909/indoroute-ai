@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from db.database import SessionLocal
 from db import models
 from .intelligence import analyze_product_risk
-from schemas import SKUImportRequest, SKUImportResponse
+from .profit_advice import get_profit_advice_for_sku
+from schemas import SKUImportRequest, SKUImportResponse, ProfitAdviceResponse
 
 router = APIRouter(prefix="/skus", tags=["SKUs"])
 
@@ -77,4 +78,14 @@ async def trigger_analysis(sku_id: str, db: Session = Depends(get_db)):
     if result.get("status") == "error":
         raise HTTPException(status_code=400, detail=result.get("reason"))
         
+    return result
+
+
+@router.get("/{sku_id}/profit-advice", response_model=ProfitAdviceResponse)
+async def get_profit_advice(sku_id: str, db: Session = Depends(get_db)):
+    result = await get_profit_advice_for_sku(sku_id, db)
+
+    if result.get("status") == "error":
+        raise HTTPException(status_code=404, detail=result.get("reason"))
+
     return result

@@ -1,4 +1,4 @@
-import { ComplianceReport, CustomsAlert, ProfitResult, RouterDecision, SKU } from "@/types";
+import { ComplianceReport, CustomsAlert, ProfitAdvice, ProfitResult, RouterDecision, SKU } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 const DEFAULT_FX_RATE = 3350;
@@ -310,6 +310,15 @@ export async function getProfits(): Promise<ProfitResult[]> {
 export async function getRouterDecisions(): Promise<RouterDecision[]> {
   const [skus, alerts, fxRate] = await Promise.all([getSKUs(), getCustomsAlerts(), getFxRate()]);
   return deriveRouterDecisionsFromInputs(skus, alerts, fxRate);
+}
+
+export async function getProfitAdvice(skuId: string): Promise<ProfitAdvice | null> {
+  try {
+    return await fetchJson<ProfitAdvice>(`/api/skus/${encodeURIComponent(skuId)}/profit-advice`);
+  } catch (err) {
+    console.warn("Profit advice fetch failed.", err);
+    return null;
+  }
 }
 
 export function deriveProfitsFromInputs(skus: SKU[], alerts: CustomsAlert[], fxRate: number): ProfitResult[] {
