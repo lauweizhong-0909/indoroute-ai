@@ -176,7 +176,7 @@ async def get_profit_advice_for_sku(sku_id: str, db: Session) -> dict[str, Any]:
 
     fallback_option_id = _choose_best_option_fallback(options)
     best_option_id = fallback_option_id
-    source = "fallback"
+    source = "rule_engine"
     headline = "Recommended fix selected from the current SKU economics."
     rationale = "This option resolves the margin issue with the smallest practical change under the current live FX, duty, and shipping assumptions."
 
@@ -200,14 +200,15 @@ async def get_profit_advice_for_sku(sku_id: str, db: Session) -> dict[str, Any]:
             ],
         }
         primary_prompt = (
-            "Pick the best option_id from route|price|cost using only the context. "
-            "Return JSON only: {\"best_option_id\":\"route|price|cost\",\"headline\":\"short headline\",\"rationale\":\"max 2 short sentences\"}. "
-            f"Context: {json.dumps(compact_context)}"
+            "Choose the best SKU fix from route, price, or cost. "
+            "Return JSON only: "
+            "{\"best_option_id\":\"route|price|cost\",\"headline\":\"short\",\"rationale\":\"1 short sentence\"}. "
+            f"{json.dumps(compact_context, separators=(',', ':'))}"
         )
         backup_prompt = (
-            "Return JSON only with keys best_option_id, headline, rationale. "
-            "best_option_id must be exactly one of route, price, cost. "
-            f"Context: {json.dumps(compact_context)}"
+            "Reply with JSON only using keys best_option_id, headline, rationale. "
+            "best_option_id must be route, price, or cost. "
+            f"{json.dumps(compact_context, separators=(',', ':'))}"
         )
 
         parsed: dict[str, Any] | None = None
@@ -243,8 +244,8 @@ async def get_profit_advice_for_sku(sku_id: str, db: Session) -> dict[str, Any]:
                 source = "ai"
                 headline = "AI selected the best option for this SKU."
                 rationale = "Recommendation is based on the current margin, shipping risk, and operational trade-offs."
-    except Exception:
-        pass
+    except Exception as exc:
+        print(f"Profit advice using rule engine for {sku.sku_id}: {type(exc).__name__}: {exc!r}")
 
     return {
         "sku_id": sku.sku_id,

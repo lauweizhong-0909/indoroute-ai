@@ -25,6 +25,15 @@ export default function CompliancePage() {
   const [aiAdvice, setAiAdvice] = useState<ComplianceAdvice | null>(null);
   const [adviceLoading, setAdviceLoading] = useState(false);
 
+  const adviceSourceLabel =
+    aiAdvice?.source === "ai"
+      ? "AI engine"
+      : aiAdvice?.source === "ai_assisted"
+        ? "AI-assisted"
+      : aiAdvice?.source === "rule_engine"
+        ? "Rule engine"
+        : "Best available";
+
   useEffect(() => {
     async function load() {
       const data = await getSKUs();
@@ -325,10 +334,10 @@ export default function CompliancePage() {
                     <div className="rounded-lg border border-blue-500/20 bg-blue-950/20 p-4">
                       <div className="flex items-center justify-between gap-3 mb-3">
                         <h5 className="text-xs font-bold uppercase tracking-widest text-slate-300">
-                          {aiAdvice?.source === "ai" ? "AI Action Plan" : "Recommended Action Plan"}
+                          {aiAdvice?.source === "ai" || aiAdvice?.source === "ai_assisted" ? "AI Action Plan" : "Rule-Based Action Plan"}
                         </h5>
-                        <Badge variant="outline" className={aiAdvice?.source === "ai" ? "border-blue-500/30 bg-blue-500/10 text-blue-200" : "border-slate-500/30 bg-slate-500/10 text-slate-300"}>
-                          {aiAdvice?.source === "ai" ? "AI engine" : "Fallback"}
+                        <Badge variant="outline" className={aiAdvice?.source === "ai" || aiAdvice?.source === "ai_assisted" ? "border-blue-500/30 bg-blue-500/10 text-blue-200" : "border-slate-500/30 bg-slate-500/10 text-slate-300"}>
+                          {adviceSourceLabel}
                         </Badge>
                       </div>
                       {adviceLoading ? (

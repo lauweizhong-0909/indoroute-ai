@@ -111,11 +111,11 @@ export default function ProfitPage() {
   const bestAdviceOption = profitAdvice?.options.find((option) => option.option_id === profitAdvice.best_option_id) ?? null;
   const alternativeAdviceOptions = profitAdvice?.options.filter((option) => option.option_id !== profitAdvice.best_option_id) ?? [];
   const adviceSourceIsAi = profitAdvice?.source === "ai";
-  const adviceSourceLabel = adviceSourceIsAi ? "AI recommendation" : "Best available recommendation";
-  const bestSolutionLabel = adviceSourceIsAi ? "AI RECOMMENDATION" : "BEST AVAILABLE RECOMMENDATION";
-  const bestSolutionHeadline = adviceSourceIsAi
-    ? "AI picked this option from the live SKU context."
-    : "Recommended fix selected from the current SKU economics.";
+  const adviceSourceLabel = adviceSourceIsAi
+    ? "AI engine"
+    : profitAdvice?.source === "rule_engine"
+      ? "Rule engine"
+      : "Best available";
 
   return (
     <div className="space-y-8 pb-12">
@@ -338,7 +338,7 @@ export default function ProfitPage() {
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Best solution</p>
                   <Badge variant="outline" className={adviceSourceIsAi ? "border-blue-400/40 bg-blue-500/20 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.3)]" : "border-slate-500/40 bg-slate-500/20 text-slate-300"}>
-                    {adviceSourceIsAi ? "AI Engine" : "Fallback"}
+                    {adviceSourceLabel}
                   </Badge>
                 </div>
                 {adviceLoading ? (

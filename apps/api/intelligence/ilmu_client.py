@@ -48,6 +48,7 @@ class IlmuAIClient:
         response_format: dict | None = None,
         temperature: float = 0.7,
         timeout_seconds: float = 60.0,
+        max_attempts: int = 2,
     ) -> str:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -62,21 +63,40 @@ class IlmuAIClient:
             payload["response_format"] = response_format
 
         async with httpx.AsyncClient(trust_env=False) as client:
-            try:
-                response = await client.post(
-                    self.base_url, 
-                    headers=headers, 
-                    json=payload, 
-                    timeout=timeout_seconds,
-                )
-                response.raise_for_status()
-                data = response.json()
-                return data["choices"][0]["message"]["content"]
-            except Exception as e:
-                print(f"HTTP request exception: {e}")
-                raise
+            last_error: Exception | None = None
 
-    async def generate_json_response(self, prompt: str, *, timeout_seconds: float = 60.0) -> dict:
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    response = await client.post(
+                        self.base_url,
+                        headers=headers,
+                        json=payload,
+                        timeout=timeout_seconds,
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    return data["choices"][0]["message"]["content"]
+                except Exception as e:
+                    last_error = e
+                    status_code = getattr(getattr(e, "response", None), "status_code", None)
+                    retryable = isinstance(e, (httpx.ReadTimeout, httpx.ConnectTimeout)) or status_code == 504
+                    print(
+                        f"HTTP request exception ({type(e).__name__}, attempt {attempt}/{max_attempts}): {e!r}"
+                    )
+                    if not retryable or attempt >= max_attempts:
+                        raise
+
+            if last_error is not None:
+                raise last_error
+            raise RuntimeError("AI request failed without a captured exception")
+
+    async def generate_json_response(
+        self,
+        prompt: str,
+        *,
+        timeout_seconds: float = 60.0,
+        max_attempts: int = 2,
+    ) -> dict:
         """Get a JSON object using plain generation, then parse locally.
 
         Some providers are slower or unstable with response_format=json_object.
@@ -85,6 +105,7 @@ class IlmuAIClient:
             prompt,
             temperature=0.1,
             timeout_seconds=timeout_seconds,
+            max_attempts=max_attempts,
         )
 
         if isinstance(raw, dict):
